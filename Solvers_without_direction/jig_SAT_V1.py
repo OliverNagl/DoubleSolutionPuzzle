@@ -1,0 +1,379 @@
+from pysat.solvers import CryptoMinisat
+from pysat.solvers import Glucose3
+from itertools import product
+from collections import Counter
+from pysat.formula import IDPool
+from generator_V2 import *
+from utility_v1 import *
+from pysat.card import CardEnc
+import time
+import psutil
+
+def print_solution(model, puzzle_vars, n, m, jigs=None):
+    """
+    Print the solution matrix with piece IDs.
+    """
+    reverse_puzzle_vars = {value: key for key, value in puzzle_vars.items()}
+    if jigs is not None:
+        revers_jig_vars = {value: key for key, value in jigs.items()}
+    solution_matrix = [[None for _ in range(n)] for _ in range(n)]
+
+    for var in model:
+        if var > 0:  # Only consider positive literals
+            if var in reverse_puzzle_vars:
+                i, j, side, m = reverse_puzzle_vars[var]
+                if solution_matrix[i][j] is None:
+                    if jigs is not None:
+                        solution_matrix[i][j] = [None] * 5
+                    else:
+                        solution_matrix[i][j] = [None] * 4
+                solution_matrix[i][j][side] = m
+
+            if jigs is not None:
+                if var in revers_jig_vars:
+                    i_jig, j_jig, o = revers_jig_vars[var]
+                    solution_matrix[i_jig][j_jig][4] = f"Orient:" + str(o)
+
+    print("Solution Matrix:")
+    for row in solution_matrix:
+        print(row)
+    return solution_matrix
+
+def constraints(n, m, jigs, solver, card=None):
+    edge_vars = {}
+    id_pool = IDPool()
+
+    for i in range(n):
+        for j in range(n):
+            for side in range(4):
+                for conn in range(m):
+                    edge_vars[(i, j, side, conn)] = id_pool.id(f'var_{i}_{j}_{side}={conn}')
+
+    if jigs is not None:
+        # Apply constrain on usable jigs, all jigs are able to be placed at any position in the grid in any ortientation
+        #this can be done by adding a clause that forces the new variable to be true if all connections of a piece are true.
+        jig_vars = {}
+        for (x, y, o), jig in jigs.items():
+            if jig is not [0,0,0,0]:
+                for i in range(n):
+                    for j in range(n):
+                        jig_id = id_pool.id(f'jig_{x}_{y}->{i}_{j}_{o}')
+                        jig_vars[(x, y, i, j, o)] = jig_id
+                        conn_vars = []
+                        for side, connection in enumerate(jig):
+                            conn_vars.append(edge_vars[(i, j, side, connection)])
+                        enforce_piece_id_and_connection_type(solver, conn_vars, jig_id)
+
+        #enforce cardinality constrain on the jigs to ensure that similar jigs are only used exactly n times
+        # where n is the cardinality of the jig.
+        if card is not None:
+            for (x,y), cardinality in card.items():
+                jig_clause = []
+                for o in range(4):
+                    if jigs[(x, y, o)] != [0,0,0,0]:
+                        for i in range(n):
+                            for j in range(n):
+                                jig_clause.append(jig_vars[(x, y, i, j, o)])
+                exactly_n2(jig_clause, solver, cardinality, id_pool)
+
+        # Enforce exactly one jig orientation per cell and one jig per cell total
+        for i in range(n):
+            for j in range(n):
+                jig_clause = []
+                for x in range(n):
+                    for y in range(n):
+                    
+                        for o in range(4):
+                            jig_clause.append(jig_vars[(x, y, i, j, o)])
+                exactly_one(jig_clause, solver,id_pool)
+
+    # Add constraints for each cell
+         # Enforce the '0' connection type can only be used on edges or corners
+    for i in range(n):
+        for j in range(n):
+            # Corners
+            if (i == 0 and j == 0):  # Top-left corner
+                solver.add_clause([edge_vars[(i, j, 0, 0)]])  # Top side = 0
+                solver.add_clause([edge_vars[(i, j, 3, 0)]])  # Left side = 0
+                solver.add_clause([-edge_vars[(i, j, 1, 0)]])
+                solver.add_clause([-edge_vars[(i, j, 2, 0)]])
+                
+            elif (i == 0 and j == n-1):  # Top-right corner
+                    solver.add_clause([edge_vars[(i, j, 0, 0)]])  # Top side = 0
+                    solver.add_clause([edge_vars[(i, j, 1, 0)]])  # Left side = 0
+                    solver.add_clause([-edge_vars[(i, j, 2, 0)]])
+                    solver.add_clause([-edge_vars[(i, j, 3, 0)]])
+            elif (i == n-1 and j == 0):  # Bottom-left corner
+                
+                solver.add_clause([edge_vars[(i, j, 2, 0)]])  # Top side = 0
+                solver.add_clause([edge_vars[(i, j, 3, 0)]])  # Left side = 0
+                solver.add_clause([-edge_vars[(i, j, 1, 0)]])
+                solver.add_clause([-edge_vars[(i, j, 0, 0)]])
+            elif (i == n-1 and j == n-1):  # Bottom-right corner
+                solver.add_clause([edge_vars[(i, j, 2, 0)]])  # Top side = 0
+                solver.add_clause([edge_vars[(i, j, 1, 0)]])  # Left side = 0
+                solver.add_clause([-edge_vars[(i, j, 3, 0)]])
+                solver.add_clause([-edge_vars[(i, j, 0, 0)]])
+
+            # Edges (excluding corners)
+            elif i == 0:  # Top row, excluding corners
+             
+                solver.add_clause([edge_vars[(i, j, 0, 0)]])  # Top side = 0
+                solver.add_clause([-edge_vars[(i, j, 1, 0)]])  # Left side = 0
+                solver.add_clause([-edge_vars[(i, j, 2, 0)]])
+                solver.add_clause([-edge_vars[(i, j,3, 0)]])
+            
+            elif i == n-1:  # Bottom row, excluding corners
+             
+                solver.add_clause([edge_vars[(i, j, 2, 0)]])  # Top side = 0
+                solver.add_clause([-edge_vars[(i, j, 1, 0)]])  # Left side = 0
+                solver.add_clause([-edge_vars[(i, j, 0, 0)]])
+                solver.add_clause([-edge_vars[(i, j, 3, 0)]])
+                
+            elif j == 0:  # Left column, excluding corners
+                solver.add_clause([edge_vars[(i, j, 3, 0)]])  # Top side = 0
+                solver.add_clause([-edge_vars[(i, j,1, 0)]])  # Left side = 0
+                solver.add_clause([-edge_vars[(i, j, 2, 0)]])
+                solver.add_clause([-edge_vars[(i, j, 0, 0)]])
+            elif j == n-1:  # Right column, excluding corners
+                solver.add_clause([edge_vars[(i, j, 1, 0)]])  # Top side = 0
+                solver.add_clause([-edge_vars[(i, j,0, 0)]])  # Left side = 0
+                solver.add_clause([-edge_vars[(i, j, 2, 0)]])
+                solver.add_clause([-edge_vars[(i, j, 3, 0)]])
+
+            # Interior pieces should not have connection type 0
+            else:
+                for side in range(4):
+                    solver.add_clause([-edge_vars[(i, j, side, 0)]])
+    
+
+    # Enforce connection matching between adjacent pieces
+    for i in range(n):
+        for j in range(n):
+            for side in range(4):
+                #enforce only one connection type per side
+                exactly_one([edge_vars[(i, j, side, conn)] for conn in range(m)], solver,id_pool)
+
+            # Enforce matching between adjacent pieces
+            if i > 0:  # Top piece matches bottom of the piece above
+                conns2 = [edge_vars[(i-1, j, 2, conn)] for conn in range(m)]
+                conns1 = [edge_vars[(i, j, 0, conn)] for conn in range(m)]
+                    
+                enforce_match(solver, conns1, conns2)
+            if j > 0:  # Left piece matches right of the piece to the left
+                conns2 = [edge_vars[(i, j, 3, conn)] for conn in range(m)]
+                conns1 = [edge_vars[(i, j-1, 1, conn)] for conn in range(m)]
+                enforce_match(solver, conns1, conns2)
+
+    if jigs is not None:
+        return edge_vars, jig_vars, id_pool
+    else:
+         edge_vars, id_pool
+
+def enforce_piece_id_and_connection_type(solver, conn_vars, jig_id):
+    """Enforce that the piece variable is only true if all the connection variables are true."""
+    for var in conn_vars:
+        solver.add_clause([-jig_id, var])
+    solver.add_clause([jig_id] + [-var for var in conn_vars])
+
+def solve(n,m, jigs, card=None, diff = None):
+    solutions = []
+    model = []
+    """Solve the puzzle, dissable first solution and solve for a second solution"""
+    for i in range(2):
+        solver = CryptoMinisat()
+        edge_vars, jig_vars, pool = constraints(n, m, jigs, solver, card=card)
+
+        if i == 1 and model[0] is not None:
+            dissable_solution(solver, model[0], edge_vars, jig_vars, jigs, pool, bound=diff)
+
+        solver.solve()
+        model.append(solver.get_model())
+        
+
+        if model[i] is not None:
+            print("Solution found!")
+            solution_matrix = print_solution(model[i], edge_vars, n, m, jigs=None)
+            solutions.append(solution_matrix)
+
+    print(f"Found {len(solutions)} solutions")
+    
+def dissable_solution(solver, model, edge_vars, jig_vars, jigs, pool, bound):
+    """Dissable the current solution by adding a clause that forces the current jigs to be false if their
+    entartung is 0."""
+    dissable_clause = []
+    for (x,y,i,j,o), var in jig_vars.items():
+        if entartung(jigs[(x,y,o)]) == 0:
+            if var in model and var > 0:
+                dissable_clause.append(-var)
+
+    enc = CardEnc.atleast(lits=dissable_clause, bound=bound,encoding=1, vpool=pool)
+    solver.append_formula(enc.clauses)
+
+def symmetric(jig):
+    """Check if a jig is symmetric."""
+    return jig == rotate(rotate(jig))
+
+def entartung(jig):
+    """Return the entartung of a symmetric jig. Which is the number of rotations that are equivalent.
+    for example entartung([4,4,4,4]) = 4, entartung([3,4,3,4]) = 2 and entartung([0,1,2,3]) = 0 """
+    if jig == rotate(jig):
+        return 4
+    elif jig == rotate(rotate(jig)):
+        return 2
+    else:
+        return 0
+
+
+def are_similar(jig1, jig2):
+    """Check if two jigs are similar considering rotation."""
+    for _ in range(4):
+        if jig1 == jig2:
+            return True
+        jig1 = rotate(jig1)
+    return False
+
+def get_cardinality(n, jigs):
+    """Return the cardinality of the jigsaw puzzle. e.g. the count of similar jigs, that are only
+    different in rotation and position."""
+    cardinality = {}
+    visited = set()
+    
+    for (i, j), jig in jigs.items():
+        if (i, j) not in visited:
+            cardinality[(i, j)] = 1
+            for (k, l), other_jig in jigs.items():
+                if (i, j) != (k, l) and are_similar(jig, other_jig):
+                    cardinality[(i, j)] += 1
+                    visited.add((k, l))
+    
+    return cardinality
+
+def get_orientations(n, jigs):
+    """
+    input dict of pieces on a grid (i,j) and output dictionary of possible orientations for each piece
+    (i,j,o) where o is the orientation. Delete jig if it is the sam as another jig """
+    orientations = {}
+    jig_list = []
+
+    for (i, j), jig in jigs.items():
+        for o in range(4):
+            if jig not in jig_list:
+                orientations[(i, j, o)] = jig
+            else:
+                orientations[(i, j, o)] = [0,0,0,0]
+
+            jig_list.append(jig)
+            jig = rotate(jig)
+    return orientations
+
+def rotate(jig):
+    """
+    Rotate a piece 90 degrees clockwise
+    """
+    return [jig[3]] + jig[:3]
+
+def scramble_pieces(n, m, jigs):
+    """
+    Scramble the pieces in the grid.
+    """
+    scrambled_jigs = {}
+    for i in range(1, n+1):
+        for j in range(1, n+1):
+            scrambled_jigs[(i-1, j-1)] = jigs[(n-i, n-j)]
+    return scrambled_jigs
+
+
+def main():
+    n = 4 # Example grid size
+    q = 2*n*2.71**(-1/2)
+    m = int((2 + q)/2)
+    m = 2*m + 1
+    print(f"puzzle should have 2 < m < {q} connection types")
+    print(f"Using m = {m}")
+
+    #generate_random_valid_jigsaw(n, m, 1) with seed = 1 and convert to dictionary of intial edges:
+    puzzle = generate_random_valid_jigsaw(n, m, None)
+    initial_edges = {}
+
+    for y in range(n):
+        for x in range(n):
+            initial_edges[(y, x)] = [int(puzzle[y][x][0]), int(puzzle[y][x][1]), int(puzzle[y][x][2]), int(puzzle[y][x][3])]
+    
+    solve_this_puzzle = initial_edges
+
+    card = get_cardinality(n,solve_this_puzzle)
+    print(card)
+
+
+    threshold = 10
+    solve(n, m, get_orientations(n, solve_this_puzzle), get_cardinality(n, solve_this_puzzle), diff=threshold)
+
+
+   
+
+if __name__ == "__main__":
+    # Record start time and initial resource usage
+    start_time = time.time()
+    process = psutil.Process()
+    start_memory = process.memory_info().rss
+
+    # Execute the main function
+    main()
+
+    # Record end time and final resource usage
+    end_time = time.time()
+    end_memory = process.memory_info().rss
+
+    # Calculate elapsed time and memory usage
+    elapsed_time = end_time - start_time
+    memory_usage = end_memory - start_memory
+
+    # Print performance metrics
+    print(f"Elapsed time: {elapsed_time:.2f} seconds")
+    print(f"Memory usage: {memory_usage / (1024 * 1024):.2f} MB")
+
+
+
+"""
+    Debug section:
+    initial_edges_false = {
+            (0, 0): [0, 1, 2, 0],  # Top-left piece: right connection = 1, bottom connection = 2
+            (0, 1): [0, 2, 4, 1],  # Center piece: top connection = 2, left connection = 0
+            (0, 2): [0, 0, 1, 2],
+            (1, 0): [2, 4, 1, 0],  # Bottom-right piece: left connection = 1
+            (1, 1): [4, 3, 4, 4],
+            (1, 2): [1, 0, 2, 4],
+            (2, 0): [1, 2, 0, 0],
+            (2, 1): [4, 1, 0, 2],
+            (2, 2): [2, 0, 0, 1]
+        }
+
+        initial_edges_true = {
+            (0, 0): [0, 1, 2, 0],  # Top-left piece: right connection = 1, bottom connection = 2
+            (0, 1): [0, 2, 4, 1],  # Center piece: top connection = 2, left connection = 0
+            (0, 2): [0, 0, 1, 2],
+            (1, 0): [2, 4, 1, 0],  # Bottom-right piece: left connection = 1
+            (1, 1): [4, 3, 4, 4],
+            (1, 2): [1, 0, 3, 3],
+            (2, 0): [1, 4, 0, 0],
+            (2, 1): [4, 1, 0, 4],
+            (2, 2): [3, 0, 0, 1]
+        }
+
+        initial_edges1 = {
+            (0, 0): [0, 1, 2, 0],  # Top-left piece: right connection = 1, bottom connection = 2
+            (0, 1): [0, 2, 4, 1],  # Center piece: top connection = 2, left connection = 0
+            (0, 2): [0, 0, 1, 2],
+            (1, 0): [2, 4, 1, 0],  # Bottom-right piece: left connection = 1
+            (1, 1): [2, 0, 0, 1],
+            (1, 2): [1, 0, 2, 4],
+            (2, 0): [1, 2, 0, 0],
+            (2, 1): [4, 1, 0, 2],
+            (2, 2): [4, 4, 4, 4]
+        }
+
+"""
+
+
+    
