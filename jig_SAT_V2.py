@@ -203,7 +203,7 @@ def solve(n,m, jigs, card=None, diff = 0,Same_pieces_k=0,same_neighbours_k=0,dis
     return solutions
 
 
-def find_neighbours_vars(y,x,i,j,n,jig_vars):
+def find_neighbours_vars(y,x,i,j,o, n,jig_vars):
     """Find the neighbours of a piece at position (x, y) on an n x n grid."""
     neighbours = []
     if x > 0 and j > 0:
@@ -240,10 +240,8 @@ def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0
                 dissable_clause.append(-var)   
         
         if var in model and var > 0:
-            neighbours = find_neighbours_vars(y,x,i,j,n,jig_vars)
-            for neighbour in neighbours:
-                neighbour_clause.append(neighbour)
-
+            neighbours = find_neighbours_vars(y,x,i,j,o,n,jig_vars)
+        
             # Now, add the rotated versions of the jig
             for rotation in range(0, 4):  # Rotate by 90, 180, 270 degrees
                 rotated_y, rotated_x, drehung  = rotate_coordinates(y, x, o, n, rotation)
@@ -261,14 +259,11 @@ def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0
                     rotated_var = jig_vars[(x,y,rotated_y,rotated_x , drehung)]
                     rotation_3_clause.append(-rotated_var)
 
-                for orient in range(4):
-                    platzhalter = jig_vars[(x,y,rotated_y,rotated_x , orient)]
-                    rotation_clause.append(-platzhalter)
-
 
     #create a global rotation variable that is false if all the rotation clauses in rotation_x_ckause are true
-    k1 = k2 = k3 = disable_rotations
-    k4 = len(rotation_0_clause) - Same_pieces_k
+   
+   
+    """k1 = k2 = k3 = disable_rotations
     #solver.add_clause(rotation_1_clause)
     enc = CardEnc.atleast(lits=rotation_1_clause, bound=k1,encoding=1, vpool=pool)
     solver.append_formula(enc.clauses)
@@ -280,16 +275,14 @@ def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0
     #solver.add_clause(rotation_3_clause)
     enc = CardEnc.atleast(lits=rotation_3_clause, bound=k3,encoding=1, vpool=pool)
     solver.append_formula(enc.clauses)
-
+"""
+    k4 = len(rotation_0_clause) - Same_pieces_k
     #solver.add_clause(rotation_0_clause)
     enc = CardEnc.atleast(lits=rotation_0_clause, bound=k4,encoding=1, vpool=pool)
     solver.append_formula(enc.clauses)
 
     neighbour = CardEnc.atmost(lits=neighbour_clause, bound=same_neighbours_k,encoding=1, vpool=pool)
     solver.append_formula(neighbour.clauses)
-
-    rot = CardEnc.atleast(lits=rotation_clause, bound=bound,encoding=1, vpool=pool)
-    solver.append_formula(rot.clauses)
 
 
 import os
