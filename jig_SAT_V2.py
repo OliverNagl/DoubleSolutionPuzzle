@@ -43,7 +43,7 @@ def print_solution(model, puzzle_vars, n, m, jigs=None):
         print(row)
     return solution_matrix
 
-def constraints(n, m, jigs, solver, card=None):
+def constraints(n, m, jigs, solver, card=None, first_try=False):
     edge_vars = {}
     id_pool = IDPool()
 
@@ -67,6 +67,10 @@ def constraints(n, m, jigs, solver, card=None):
                         for side, connection in enumerate(jig):
                             conn_vars.append(edge_vars[(i, j, side, connection)])
                         enforce_piece_id_and_connection_type(solver, conn_vars, jig_id)
+
+            if first_try is True and o == 0:
+                #enforce that the piece is only used once
+                solver.add_clause([jig_vars[(x, y, x, y, o)]])
 
         #enforce cardinality constrain on the jigs to ensure that similar jigs are only used exactly n times
         # where n is the cardinality of the jig.
@@ -185,7 +189,12 @@ def solve(n,m, jigs, card=None, diff = 0,Same_pieces_k=0,same_neighbours_k=0,dis
     """Solve the puzzle, dissable first solution and solve for a second solution"""
     for i in range(2):
         solver = CryptoMinisat()
-        edge_vars, jig_vars, pool = constraints(n, m, jigs, solver, card=card)
+        first_try = False
+        
+        if i == 0:
+            first_try = True
+
+        edge_vars, jig_vars, pool = constraints(n, m, jigs, solver, card=card, first_try=first_try)
 
         if i == 1 and model[0] is not None:
             dissable_solution(n, solver, model[0], edge_vars, jig_vars, jigs, pool, bound=diff, Same_pieces_k=Same_pieces_k, same_neighbours_k=same_neighbours_k, disable_rotations=disable_rotations)
@@ -203,26 +212,24 @@ def solve(n,m, jigs, card=None, diff = 0,Same_pieces_k=0,same_neighbours_k=0,dis
     return solutions
 
 
-def find_neighbours_vars(y,x,i,j,o, n,jig_vars):
-    """Find the neighbours of a piece at position (x, y) on an n x n grid."""
-    neighbours = []
-    if x > 0 and j > 0:
-        for o in range(4):
-            neighbours.append(jig_vars[(y, x-1, i, j-1, o)])
-        
-    if x < n - 1 and j < n - 1:
-        for o in range(4):
-            neighbours.append(jig_vars[(y, x+1, i, j+1, o)])
-        
-    if y > 0 and i > 0:
-        for o in range(4):
-            neighbours.append(jig_vars[(y-1, x, i-1, j, o)])
-        
-    if y < n - 1 and i < n - 1:
-        for o in range(4):
-            neighbours.append(jig_vars[(y+1,x, i+1, j, o)])
+def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool):
+    """For a given piece at position (i,j), orientation o and index (x,y) find
+    the neighbouring piece and dissallow the same pair to be neihgbours in any other position (i,j)"""
     
-    return neighbours
+    if i > 0 and j > 0:
+        for u,v in product(range(1,n), range(1,n)):
+            for o in range(4):
+                #dissalow the same pair (top piece) to be neighbours in any other position (i,j)
+                solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+
+    elif i < n-1 and j < n-1:
+        for u,v in product(range(n-1), range(n-1)):
+            for o in range(4):
+                #dissalow the same pair (bottom piece) to be neighbours in any other position (i,j)
+                solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+    
 
 def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0, Same_pieces_k= 0, same_neighbours_k=0,disable_rotations=1):
     """Dissable the current solution by adding a clause that forces the current jigs to be false if their
@@ -240,7 +247,7 @@ def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0
                 dissable_clause.append(-var)   
         
         if var in model and var > 0:
-            neighbours = find_neighbours_vars(y,x,i,j,o,n,jig_vars)
+            find_neighbours_vars(y,x,i,j,o,n,jig_vars, solver, pool)
         
             # Now, add the rotated versions of the jig
             for rotation in range(0, 4):  # Rotate by 90, 180, 270 degrees
@@ -280,10 +287,6 @@ def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0
     #solver.add_clause(rotation_0_clause)
     enc = CardEnc.atleast(lits=rotation_0_clause, bound=k4,encoding=1, vpool=pool)
     solver.append_formula(enc.clauses)
-
-    neighbour = CardEnc.atmost(lits=neighbour_clause, bound=same_neighbours_k,encoding=1, vpool=pool)
-    solver.append_formula(neighbour.clauses)
-
 
 import os
 
@@ -389,15 +392,14 @@ def scramble_pieces(n, m, jigs):
             scrambled_jigs[(i-1, j-1)] = jigs[(n-i, n-j)]
     return scrambled_jigs
 
-def main():
-    n = 9 # Example grid size
+def jig_main(n=5,threshold=0,Same_pieces_k=0,same_neighbours_k=0,disable_rotations=0):
     q = 2*n*2.71**(-1/2)
     m = int((2 + q)/2)
     print(f"Using m = {m}")
     m = 2*m + 1
     print(f"puzzle should have 2 < m < {q} connection types")
     
-    puzzle = generate_random_valid_jigsaw(n, m, seed=50)
+    puzzle = generate_random_valid_jigsaw(n, m)
 
     initial_edges = {}
 
@@ -406,11 +408,6 @@ def main():
             initial_edges[(y, x)] = [int(puzzle[y][x][0]), int(puzzle[y][x][1]), int(puzzle[y][x][2]), int(puzzle[y][x][3])]
     
     solve_this_puzzle = initial_edges
-
-    threshold = 0
-    Same_pieces_k = 0
-    same_neighbours_k = n**3*4
-    disable_rotations = int(n**2-n)
 
     solutions = solve(n, 
                       m, 
@@ -422,6 +419,7 @@ def main():
                       disable_rotations = disable_rotations)
     
     save_solutions(solutions, n, m)
+    return solutions
     
 
 def save_solutions(solutions, n, m):
@@ -430,28 +428,6 @@ def save_solutions(solutions, n, m):
     for i, solution in enumerate(solutions):
         solution = np.array(solution)
         np.save(f'Solutions/Solution_{n}_{m}_{i}_{t}.npy', solution)
-
-if __name__ == "__main__":
-    # Record start time and initial resource usage
-    start_time = time.time()
-    process = psutil.Process()
-    start_memory = process.memory_info().rss
-
-    # Execute the main function
-    main()
-
-    # Record end time and final resource usage
-    end_time = time.time()
-    end_memory = process.memory_info().rss
-
-    # Calculate elapsed time and memory usage
-    elapsed_time = end_time - start_time
-    memory_usage = end_memory - start_memory
-
-    # Print performance metrics
-    print(f"Elapsed time: {elapsed_time:.2f} seconds")
-    print(f"Memory usage: {memory_usage / (1024 * 1024):.2f} MB")
-
 
 
 """
