@@ -11,7 +11,7 @@ import psutil
 import random
 import os
 
-def print_solution(model, puzzle_vars, n, m, jigs=None):
+def print_solution(model, puzzle_vars, n, m, jigs=None, verbose=True):
     """
     Print the solution matrix with piece IDs.
     """
@@ -39,8 +39,9 @@ def print_solution(model, puzzle_vars, n, m, jigs=None):
 
     print("Solution Matrix:")
     solution_matrix = Add_connection_direction(solution_matrix,n)
-    for row in solution_matrix:
-        print(row)
+    if verbose == True:
+        for row in solution_matrix:
+            print(row)
     return solution_matrix
 
 def constraints(n, m, jigs, solver, card=None, first_try=False):
@@ -57,12 +58,12 @@ def constraints(n, m, jigs, solver, card=None, first_try=False):
         # Apply constrain on usable jigs, all jigs are able to be placed at any position in the grid in any ortientation
         #this can be done by adding a clause that forces the new variable to be true if all connections of a piece are true.
         jig_vars = {}
-        for (x, y, o), jig in jigs.items():
+        for (y, x, o), jig in jigs.items():
             if jig is not [0,0,0,0]:
                 for i in range(n):
                     for j in range(n):
-                        jig_id = id_pool.id(f'jig_{x}_{y}->{i}_{j}_{o}')
-                        jig_vars[(x, y, i, j, o)] = jig_id
+                        jig_id = id_pool.id(f'jig_{y}_{x}->{i}_{j}_{o}')
+                        jig_vars[(y, x, i, j, o)] = jig_id
                         conn_vars = []
                         for side, connection in enumerate(jig):
                             conn_vars.append(edge_vars[(i, j, side, connection)])
@@ -70,7 +71,7 @@ def constraints(n, m, jigs, solver, card=None, first_try=False):
 
             if first_try is True and o == 0:
                 #enforce that the piece is only used once
-                solver.add_clause([jig_vars[(x, y, x, y, o)]])
+                solver.add_clause([jig_vars[(y, x, y, x, o)]])
 
         #enforce cardinality constrain on the jigs to ensure that similar jigs are only used exactly n times
         # where n is the cardinality of the jig.
@@ -205,30 +206,149 @@ def solve(n,m, jigs, card=None, diff = 0,Same_pieces_k=0,same_neighbours_k=0,dis
 
         if model[i] is not None:
             print("Solution found!")
-            solution_matrix = print_solution(model[i], edge_vars, n, m, jigs=jig_vars)
+            solution_matrix = print_solution(model[i], edge_vars, n, m, jigs=jig_vars, verbose=False)
             solutions.append(solution_matrix)
 
     print(f"Found {len(solutions)} solutions")
     return solutions
 
 
-def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool):
+def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
     """For a given piece at position (i,j), orientation o and index (x,y) find
     the neighbouring piece and dissallow the same pair to be neihgbours in any other position (i,j)"""
-    
-    if i > 0 and j > 0:
-        for u,v in product(range(1,n), range(1,n)):
-            for o in range(4):
-                #dissalow the same pair (top piece) to be neighbours in any other position (i,j)
-                solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
-                solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
 
-    elif i < n-1 and j < n-1:
-        for u,v in product(range(n-1), range(n-1)):
+    """Use a random variable to only add the constraint for about 1/2 of the pieces"""
+    if n%2 == 0:
+        if i == (n/2)-1 or j == (n/2)-1:
             for o in range(4):
-                #dissalow the same pair (bottom piece) to be neighbours in any other position (i,j)
-                solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
-                solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                solver.add_clause([-jig_vars[(y,x,i,j,o)]])
+    else:
+        if i == ((n+1)/2)-1 and j == ((n+1)/2)-1:
+            for o in range(4):
+                solver.add_clause([-jig_vars[(y,x,i,j,o)]])
+
+    if i == 0:
+        if j == 0:
+            if random.random() > random_var:
+                u, v = (0, n-1)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x+1,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                u,v = (n-1,0)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x+1,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                u,v = (n-1,n-1)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x+1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+        elif j == n-1:
+            if random.random() > random_var:
+                u, v = (0, 0)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x-1,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                u,v = (n-1,0)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x-1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                u,v = (n-1,n-1)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x-1,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+        else:
+            for u,v in product([n-1], range(1,n-1)):
+                if random.random() > random_var:
+                    for o in range(4):
+                        solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y+1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+            for u,v in product([0], range(1,n-1)):
+                if random.random() > random_var:
+                    for o in range(4):
+                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+    elif i == n-1:
+        if j == 0:
+            if random.random() > random_var:
+                u, v = (0, 0)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x+1,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                u,v = (0,n-1)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x+1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                u,v = (n-1,n-1)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x+1,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+        elif j == n-1:
+            if random.random() > random_var:
+                u, v = (0, 0)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x-1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                u,v = (0,n-1)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x-1,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                u,v = (n-1,0)
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x-1,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+        else:
+            for u,v in product([0], range(1,n-1)):
+                if random.random() > random_var:
+                    for o in range(4):
+                        solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y-1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+            for u,v in product([n-1], range(1,n-1)):
+                if random.random() > random_var:
+                    for o in range(4):
+                        solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+
+    elif j == 0:
+        for u,v in product(range(1,n-1), [0]):
+            if random.random() > random_var:
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+        for u,v in product(range(1,n-1), [n-1]):
+            if random.random() > random_var:
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y,x+1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+    elif j == n-1:
+        for u,v in product(range(1,n-1),[0]):
+            if random.random() > random_var:
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y,x-1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+        for u,v in product(range(1,n-1), [n-1]):
+            if random.random() > random_var:
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+    else:
+        for u,v in product(range(1,n-1), range(1,n-1)):
+            if random.random() > random_var:
+                    for o in range(4):
+                        #dissalow the same pair (top piece) to be neighbours in any other position (i,j)
+                        solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,i,j,o)]])
+                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,i,j,o)]])
+
+
     
 
 def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0, Same_pieces_k= 0, same_neighbours_k=0,disable_rotations=1):
@@ -241,51 +361,43 @@ def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0
     rotation_3_clause = []
     rotation_0_clause = []
     neighbour_clause = []
-    for (x,y,i,j,o), var in jig_vars.items():
-        if entartung(jigs[(x,y,o)]) == 0:
+    for (y,x,i,j,o), var in jig_vars.items():
+        if entartung(jigs[(y,x,o)]) == 0:
             if var in model and var > 0:
                 dissable_clause.append(-var)   
         
         if var in model and var > 0:
-            find_neighbours_vars(y,x,i,j,o,n,jig_vars, solver, pool)
-        
+            find_neighbours_vars(y,x,i,j,o,n,jig_vars, solver, pool,random_var=same_neighbours_k)
+
             # Now, add the rotated versions of the jig
             for rotation in range(0, 4):  # Rotate by 90, 180, 270 degrees
                 rotated_y, rotated_x, drehung  = rotate_coordinates(y, x, o, n, rotation)
                 
                 if rotation == 0:
-                    rotated_var = jig_vars[(x,y,rotated_y,rotated_x , drehung)]
+                    rotated_var = jig_vars[(y,x,rotated_y,rotated_x , drehung)]
                     rotation_0_clause.append(-rotated_var)
                 elif rotation == 1:
-                    rotated_var = jig_vars[(x,y,rotated_y,rotated_x , drehung)]
+                    rotated_var = jig_vars[(y,x,rotated_y,rotated_x , drehung)]
                     rotation_1_clause.append(-rotated_var)
                 elif rotation == 2:
-                    rotated_var = jig_vars[(x,y,rotated_y,rotated_x , drehung)]
+                    rotated_var = jig_vars[(y,x,rotated_y,rotated_x , drehung)]
                     rotation_2_clause.append(-rotated_var)
                 elif rotation == 3:
-                    rotated_var = jig_vars[(x,y,rotated_y,rotated_x , drehung)]
+                    rotated_var = jig_vars[(y,x,rotated_y,rotated_x , drehung)]
                     rotation_3_clause.append(-rotated_var)
 
-
     #create a global rotation variable that is false if all the rotation clauses in rotation_x_ckause are true
-   
-   
-    """k1 = k2 = k3 = disable_rotations
-    #solver.add_clause(rotation_1_clause)
-    enc = CardEnc.atleast(lits=rotation_1_clause, bound=k1,encoding=1, vpool=pool)
-    solver.append_formula(enc.clauses)
+    
+    rot1 = CardEnc.atleast(lits=rotation_1_clause, bound=disable_rotations,encoding=1, vpool=pool)
+    solver.append_formula(rot1.clauses)
+    rot2 = CardEnc.atleast(lits=rotation_2_clause, bound=disable_rotations,encoding=1, vpool=pool)
+    solver.append_formula(rot2.clauses)
+    rot3 = CardEnc.atleast(lits=rotation_3_clause, bound=disable_rotations,encoding=1, vpool=pool)
+    solver.append_formula(rot3.clauses)
+    
 
-    #solver.add_clause(rotation_2_clause)
-    enc = CardEnc.atleast(lits=rotation_2_clause, bound=k2,encoding=1, vpool=pool)
-    solver.append_formula(enc.clauses)
-
-    #solver.add_clause(rotation_3_clause)
-    enc = CardEnc.atleast(lits=rotation_3_clause, bound=k3,encoding=1, vpool=pool)
-    solver.append_formula(enc.clauses)
-"""
-    k4 = len(rotation_0_clause) - Same_pieces_k
-    #solver.add_clause(rotation_0_clause)
-    enc = CardEnc.atleast(lits=rotation_0_clause, bound=k4,encoding=1, vpool=pool)
+    k4 = len(dissable_clause) - Same_pieces_k
+    enc = CardEnc.atleast(lits=dissable_clause, bound=k4,encoding=1, vpool=pool)
     solver.append_formula(enc.clauses)
 
 import os
@@ -394,7 +506,7 @@ def scramble_pieces(n, m, jigs):
 
 def jig_main(n=5,threshold=0,Same_pieces_k=0,same_neighbours_k=0,disable_rotations=0):
     q = 2*n*2.71**(-1/2)
-    m = int((2 + q)/2)
+    m = int((2 + q)/2) - 1
     print(f"Using m = {m}")
     m = 2*m + 1
     print(f"puzzle should have 2 < m < {q} connection types")
@@ -418,7 +530,8 @@ def jig_main(n=5,threshold=0,Same_pieces_k=0,same_neighbours_k=0,disable_rotatio
                       same_neighbours_k=same_neighbours_k,
                       disable_rotations = disable_rotations)
     
-    save_solutions(solutions, n, m)
+    if len(solutions) > 1:
+        save_solutions(solutions, n, m)
     return solutions
     
 
