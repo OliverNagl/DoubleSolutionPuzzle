@@ -388,14 +388,14 @@ def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
                     solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
     else:
         pass
-        """for u,v in product(range(1,n-1), range(1,n-1)):
+        for u,v in product(range(1,n-1), range(1,n-1)):
             if random.random() > random_var:
                     for o in range(4):
                         #dissalow the same pair (top piece) to be neighbours in any other position (i,j)
                         solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
                         solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
                         solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])"""
+                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
 
 
     
@@ -437,17 +437,17 @@ def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0
 
     #create a global rotation variable that is false if all the rotation clauses in rotation_x_ckause are true
     
-    """rot1 = CardEnc.atleast(lits=rotation_1_clause, bound=disable_rotations,encoding=1, vpool=pool)
+    rot1 = CardEnc.atleast(lits=rotation_1_clause, bound=disable_rotations,encoding=1, vpool=pool)
     solver.append_formula(rot1.clauses)
     rot2 = CardEnc.atleast(lits=rotation_2_clause, bound=disable_rotations,encoding=1, vpool=pool)
     solver.append_formula(rot2.clauses)
     rot3 = CardEnc.atleast(lits=rotation_3_clause, bound=disable_rotations,encoding=1, vpool=pool)
-    solver.append_formula(rot3.clauses)"""
+    solver.append_formula(rot3.clauses)
     
 
-    """k4 = len(dissable_clause) - Same_pieces_k
+    k4 = len(dissable_clause) - Same_pieces_k
     enc = CardEnc.atleast(lits=dissable_clause, bound=k4,encoding=1, vpool=pool)
-    solver.append_formula(enc.clauses)"""
+    solver.append_formula(enc.clauses)
 
 import os
 

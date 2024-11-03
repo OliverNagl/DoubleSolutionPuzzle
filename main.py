@@ -34,8 +34,8 @@ def mmain(same_neighbours_k):
     return elapsed_time, solutions
 
 def find_optimum():
-    for i in range(1):
-        elapsed_time, solutions = mmain(-1)
+    for i in range(10):
+        elapsed_time, solutions = mmain((10-i)/10)
         print(f"Same neighbours k: {i}")
         print(f"Elapsed time: {elapsed_time:.2f} seconds")
         print(f"Solutions: {solutions}")
