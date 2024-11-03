@@ -436,17 +436,17 @@ def dissable_solution(n, solver, model, edge_vars, jig_vars, jigs, pool, bound=0
 
     #create a global rotation variable that is false if all the rotation clauses in rotation_x_ckause are true
     
-    rot1 = CardEnc.atleast(lits=rotation_1_clause, bound=disable_rotations,encoding=1, vpool=pool)
+    """rot1 = CardEnc.atleast(lits=rotation_1_clause, bound=disable_rotations,encoding=1, vpool=pool)
     solver.append_formula(rot1.clauses)
     rot2 = CardEnc.atleast(lits=rotation_2_clause, bound=disable_rotations,encoding=1, vpool=pool)
     solver.append_formula(rot2.clauses)
     rot3 = CardEnc.atleast(lits=rotation_3_clause, bound=disable_rotations,encoding=1, vpool=pool)
-    solver.append_formula(rot3.clauses)
+    solver.append_formula(rot3.clauses)"""
     
 
-    k4 = len(dissable_clause) - Same_pieces_k
+    """k4 = len(dissable_clause) - Same_pieces_k
     enc = CardEnc.atleast(lits=dissable_clause, bound=k4,encoding=1, vpool=pool)
-    solver.append_formula(enc.clauses)
+    solver.append_formula(enc.clauses)"""
 
 import os
 
