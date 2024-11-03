@@ -229,19 +229,18 @@ def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
 
     if i == 0:
         if j == 0:
-            if random.random() > random_var:
-                u, v = (0, n-1)
-                for o in range(4):
-                    solver.add_clause([-jig_vars[(y,x+1,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                    solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
-                u,v = (n-1,0)
-                for o in range(4):
-                    solver.add_clause([-jig_vars[(y,x+1,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                    solver.add_clause([-jig_vars[(y+1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
-                u,v = (n-1,n-1)
-                for o in range(4):
-                    solver.add_clause([-jig_vars[(y,x+1,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
-                    solver.add_clause([-jig_vars[(y+1,x,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
+            u, v = (0, n-1)
+            for o in range(4):
+                solver.add_clause([-jig_vars[(y,x+1,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
+                solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
+            u,v = (n-1,0)
+            for o in range(4):
+                solver.add_clause([-jig_vars[(y,x+1,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
+                solver.add_clause([-jig_vars[(y+1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
+            u,v = (n-1,n-1)
+            for o in range(4):
+                solver.add_clause([-jig_vars[(y,x+1,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
+                solver.add_clause([-jig_vars[(y+1,x,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
         elif j == n-1:
             if random.random() > random_var:
                 u, v = (0, 0)
@@ -344,17 +343,17 @@ def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
                     solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
                     solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
         for u,v in product([n-1], range(1,n-1)):
-                if random.random() > random_var:
-                    for o in range(4):
-                        solver.add_clause([-jig_vars[(y,x+1,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y-1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y+1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
+            if random.random() > random_var:
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x+1,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
         for u,v in product([0], range(1,n-1)):
-                if random.random() > random_var:
-                    for o in range(4):
-                        solver.add_clause([-jig_vars[(y,x+1,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y-1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
+            if random.random() > random_var:
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x+1,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
         for u,v in product(range(1,n-1), [n-1]):
             if random.random() > random_var:
                 for o in range(4):
@@ -369,17 +368,17 @@ def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
                     solver.add_clause([-jig_vars[(y,x-1,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
                     solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
         for u,v in product([n-1], range(1,n-1)):
-                if random.random() > random_var:
-                    for o in range(4):
-                        solver.add_clause([-jig_vars[(y,x-1,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y-1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
+            if random.random() > random_var:
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x-1,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
         for u,v in product([0], range(1,n-1)):
-                if random.random() > random_var:
-                    for o in range(4):
-                        solver.add_clause([-jig_vars[(y,x-1,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y-1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y+1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
+            if random.random() > random_var:
+                for o in range(4):
+                    solver.add_clause([-jig_vars[(y,x-1,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
+                    solver.add_clause([-jig_vars[(y-1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
+                    solver.add_clause([-jig_vars[(y+1,x,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
         for u,v in product(range(1,n-1), [n-1]):
             if random.random() > random_var:
                 for o in range(4):
