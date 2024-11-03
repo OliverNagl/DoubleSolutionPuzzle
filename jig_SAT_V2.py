@@ -387,14 +387,15 @@ def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
                     solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
                     solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
     else:
-        for u,v in product(range(1,n-1), range(1,n-1)):
+        pass
+        """for u,v in product(range(1,n-1), range(1,n-1)):
             if random.random() > random_var:
                     for o in range(4):
                         #dissalow the same pair (top piece) to be neighbours in any other position (i,j)
                         solver.add_clause([-jig_vars[(y-1,x,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
                         solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
                         solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
+                        solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])"""
 
 
     
