@@ -55,11 +55,11 @@ def print_solution(model, puzzle_vars, n, m, jig_vars=None, mapped_jig_vars=None
     solution_matrix0 = Add_connection_direction(solution_matrix0,n)
     solution_matrix1 = Add_connection_direction(solution_matrix1,n)
     if verbose == True:
+        print("Sol0")
         for row in solution_matrix0:
-            print("Sol0")
             print(row)
+        print("Sol1")
         for row in solution_matrix1:
-            print("Sol1")
             print(row)
         
     return [solution_matrix0, solution_matrix1]
@@ -90,8 +90,8 @@ def constraints(n, m, puzzle, solver):
             conn_vars.append(edge_vars[(y, x, side, connection,0)])
         enforce_piece_id_and_connection_type(solver, conn_vars, jig_id)
 
-        #enforce that the piece is only used once/is used
-        solver.add_clause([jig_vars[(y, x, o)]])
+        """#enforce that the piece is only used once/is used
+        solver.add_clause([jig_vars[(y, x, o)]])"""
 
     for (y, x, o), jig in mapped_puzzle.items():
         jig_id = id_pool.id(f'jig1_{y}_{x}_{o}')
@@ -103,8 +103,8 @@ def constraints(n, m, puzzle, solver):
             conn_vars.append(edge_vars[(y, x, side, connection,1)])
         enforce_piece_id_and_connection_type(solver, conn_vars, jig_id)
 
-        #enforce that the piece is only used once/ is used
-        solver.add_clause([mapped_jig_vars[(y, x, o)]])
+        """#enforce that the piece is only used once/ is used
+        solver.add_clause([mapped_jig_vars[(y, x, o)]])"""
 
     #enforce that interior pieces never have conn type 0
     for i in range(1, n-1):
@@ -118,7 +118,7 @@ def constraints(n, m, puzzle, solver):
         for side in range(4):
             for conn in range(m):
                 solver.add_clause([edge_vars[(i, j, (side+o1)%4, conn, 1)], -edge_vars[(y, x, o, conn, 0)]])
-                
+             
 
      # Enforce connection matching between adjacent pieces
     for i in range(n):
@@ -150,7 +150,7 @@ def constraints(n, m, puzzle, solver):
 
 
 
-def solve(n,m,puzzle,verbose=False):
+def solve(n,m,puzzle,verbose=True):
     solver = CryptoMinisat()
     edge_vars, jig_vars,mapped_jig_vars, pool = constraints(n, m, puzzle, solver)
 
@@ -160,7 +160,7 @@ def solve(n,m,puzzle,verbose=False):
     solutions = []
     if model is not None:
         print("Solution found!")
-        solutions = print_solution(model, edge_vars, n, m, jigs=jig_vars, mapped_jig_vars=mapped_jig_vars, verbose=verbose)
+        solutions = print_solution(model, edge_vars, n, m, jig_vars=jig_vars, mapped_jig_vars=mapped_jig_vars, verbose=verbose)
     
     print(f"Found {len(solutions)} solutions")
     return solutions
@@ -187,10 +187,10 @@ def jig_main(n=5,initialized_connections=0,verbose=False):
             (0, 2, 0): [0, 0, 1, 2],
             (1, 0, 0): [2, 4, 1, 0],  # Bottom-right piece: left connection = 1
             (1, 1, 0): [4, 3, 4, 4],
-            (1, 2,0 ): [1, 0, 3, 3],
-            (2, 0,0): [1, 4, 0, 0],
-            (2, 1,0): [4, 1, 0, 4],
-            (2, 2,0): [3, 0, 0, 1]
+            (1, 2, 0): [1, 0, 3, 3],
+            (2, 0, 0): [1, 4, 0, 0],
+            (2, 1, 0): [4, 1, 0, 4],
+            (2, 2, 0): [3, 0, 0, 1]
         }
 
     solve_this_puzzle = initial_edges_true
@@ -198,7 +198,7 @@ def jig_main(n=5,initialized_connections=0,verbose=False):
     solutions = solve(n, 
                       m, 
                       solve_this_puzzle,
-                      verbose=False)
+                      verbose=verbose)
     
     if len(solutions) > 1:
         save_solutions(solutions, n, m)
