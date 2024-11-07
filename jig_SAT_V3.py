@@ -90,8 +90,8 @@ def constraints(n, m, puzzle, solver):
             conn_vars.append(edge_vars[(y, x, side, connection,0)])
         enforce_piece_id_and_connection_type(solver, conn_vars, jig_id)
 
-        """#enforce that the piece is only used once/is used
-        solver.add_clause([jig_vars[(y, x, o)]])"""
+        #enforce that the piece is only used once/is used
+        solver.add_clause([jig_vars[(y, x, o)]])
 
     for (y, x, o), jig in mapped_puzzle.items():
         jig_id = id_pool.id(f'jig1_{y}_{x}_{o}')
@@ -103,8 +103,8 @@ def constraints(n, m, puzzle, solver):
             conn_vars.append(edge_vars[(y, x, side, connection,1)])
         enforce_piece_id_and_connection_type(solver, conn_vars, jig_id)
 
-        """#enforce that the piece is only used once/ is used
-        solver.add_clause([mapped_jig_vars[(y, x, o)]])"""
+        #enforce that the piece is only used once/ is used
+        solver.add_clause([mapped_jig_vars[(y, x, o)]])
 
     #enforce that interior pieces never have conn type 0
     for i in range(1, n-1):
@@ -113,37 +113,39 @@ def constraints(n, m, puzzle, solver):
                     solver.add_clause([-edge_vars[(i, j, side, 0,1)]])
                     solver.add_clause([-edge_vars[(i, j, side, 0,0)]])
     
+    #enforce that each piece has at least one connection (no None)
+    for i in range(n):
+        for j in range(n):
+            for sol in range(2):
+                for side in range(4):
+                    exactly_one([edge_vars[(i, j, side, conn, sol)] for conn in range(m)], solver,id_pool)
+
     #enforce that if a connection is true in the mapped puzzle, it is also true in the original puzzle, considering the rotation and displacement
     for (y, x, o), (i,j,o1) in mapping_.items():
         for side in range(4):
             for conn in range(m):
-                solver.add_clause([edge_vars[(i, j, (side+o1)%4, conn, 1)], -edge_vars[(y, x, o, conn, 0)]])
+                if puzzle[(y,x,o)] == None:
+                    solver.add_clause([edge_vars[(i, j, (side+o1)%4, conn, 1)], -edge_vars[(y, x, o, conn, 0)]])
              
 
-     # Enforce connection matching between adjacent pieces
+    # Enforce connection matching between adjacent pieces
     for i in range(n):
         for j in range(n):
-            for side in range(4):
-                #enforce only one connection type per side
-                for sol in range(2):
-                    exactly_one([edge_vars[(i, j, side, conn, sol)] for conn in range(m)], solver,id_pool)
-
-            # Enforce matching between adjacent pieces
-            if i > 0:  # Top piece matches bottom of the piece above
-                for sol in range(2):
-                    conns2 = [edge_vars[(i-1, j, 2, conn, sol)] for conn in range(m)]
-                    conns1 = [edge_vars[(i, j, 0, conn, sol)] for conn in range(m)]
-                    enforce_match(solver, conns1, conns2)
-            if j > 0:  # Left piece matches right of the piece to the left
-                for sol in range(2):
-                    conns2 = [edge_vars[(i, j, 3, conn, sol)] for conn in range(m)]
-                    conns1 = [edge_vars[(i, j-1, 1, conn, sol)] for conn in range(m)]
-                    enforce_match(solver, conns1, conns2)
+            for sol in range(2):
+                # Enforce matching between adjacent pieces
+                if i > 0:  # Top piece matches bottom of the piece above
+                        conns2 = [edge_vars[(i-1, j, 2, conn, sol)] for conn in range(m)]
+                        conns1 = [edge_vars[(i, j, 0, conn, sol)] for conn in range(m)]
+                        enforce_match(solver, conns1, conns2)
+                if j > 0:  # Left piece matches right of the piece to the left
+                        conns2 = [edge_vars[(i, j, 3, conn, sol)] for conn in range(m)]
+                        conns1 = [edge_vars[(i, j-1, 1, conn, sol)] for conn in range(m)]
+                        enforce_match(solver, conns1, conns2)
 
 
 
     if puzzle is not None:
-        return edge_vars, jig_vars, mapped_jig_vars, id_pool
+        return edge_vars, jig_vars, mapped_jig_vars, id_pool, mapping_
     else:
         return edge_vars, id_pool
 
@@ -152,7 +154,7 @@ def constraints(n, m, puzzle, solver):
 
 def solve(n,m,puzzle,verbose=True):
     solver = CryptoMinisat()
-    edge_vars, jig_vars,mapped_jig_vars, pool = constraints(n, m, puzzle, solver)
+    edge_vars, jig_vars,mapped_jig_vars, pool, piece_mapping = constraints(n, m, puzzle, solver)
 
     solver.solve()
     model = solver.get_model()
@@ -163,7 +165,7 @@ def solve(n,m,puzzle,verbose=True):
         solutions = print_solution(model, edge_vars, n, m, jig_vars=jig_vars, mapped_jig_vars=mapped_jig_vars, verbose=verbose)
     
     print(f"Found {len(solutions)} solutions")
-    return solutions
+    return solutions, piece_mapping
 
 
 def jig_main(n=5,initialized_connections=0,verbose=False):
@@ -181,7 +183,7 @@ def jig_main(n=5,initialized_connections=0,verbose=False):
         for x in range(n):
             initial_edges[(y, x, 0)] = [puzzle[y][x][0], puzzle[y][x][1], puzzle[y][x][2], puzzle[y][x][3]]
     
-    initial_edges_true = {
+    """initial_edges_true = {
             (0, 0, 0): [0, 1, 2, 0],  # Top-left piece: right connection = 1, bottom connection = 2
             (0, 1, 0): [0, 2, 4, 1],  # Center piece: top connection = 2, left connection = 0
             (0, 2, 0): [0, 0, 1, 2],
@@ -191,23 +193,25 @@ def jig_main(n=5,initialized_connections=0,verbose=False):
             (2, 0, 0): [1, 4, 0, 0],
             (2, 1, 0): [4, 1, 0, 4],
             (2, 2, 0): [3, 0, 0, 1]
-        }
+        }"""
 
-    solve_this_puzzle = initial_edges_true
+    solve_this_puzzle = initial_edges
    
-    solutions = solve(n, 
+    solutions, piece_mapping = solve(n, 
                       m, 
                       solve_this_puzzle,
                       verbose=verbose)
     
     if len(solutions) > 1:
-        save_solutions(solutions, n, m)
+        save_solutions(solutions, n, m, piece_mapping)
     return solutions
     
 
-def save_solutions(solutions, n, m):
+def save_solutions(solutions, n, m, piece_mapping):
     t = get_counter()
     increment_counter(t)
+    #save mapping dictionary with numpy
+    np.save(f'Solutions/Mapping_{n}_{m}_{t}.npy', piece_mapping)
     for i, solution in enumerate(solutions):
         solution = np.array(solution)
         np.save(f'Solutions/Solution_{n}_{m}_{i}_{t}.npy', solution)

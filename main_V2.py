@@ -6,7 +6,7 @@ def main():
     start_memory = process.memory_info().rss
 
     solutions = []
-    solutions = jig_main(n = 5,initialized_connections=0,verbose=True)
+    solutions = jig_main(n = 5,initialized_connections=5,verbose=True)
 
     # Record end time and final resource usage
     end_time = time.time()
