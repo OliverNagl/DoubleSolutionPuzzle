@@ -10,6 +10,7 @@ import time
 import psutil
 import random
 import os
+from mapping import *
 
 def print_solution(model, puzzle_vars, n, m, jigs=None, verbose=True):
     """
@@ -58,6 +59,8 @@ def constraints(n, m, jigs, solver, card=None, first_try=False):
         # Apply constrain on usable jigs, all jigs are able to be placed at any position in the grid in any ortientation
         #this can be done by adding a clause that forces the new variable to be true if all connections of a piece are true.
         jig_vars = {}
+        mapped_puzzle = mapping(n,m, jigs)
+
         for (y, x, o), jig in jigs.items():
             if jig is not [0,0,0,0]:
                 for i in range(n):
@@ -241,7 +244,7 @@ def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
             for o in range(4):
                 solver.add_clause([-jig_vars[(y,x+1,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
                 solver.add_clause([-jig_vars[(y+1,x,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
-        elif j == n-1:
+        """elif j == n-1:
             if random.random() > random_var:
                 u, v = (0, 0)
                 for o in range(4):
@@ -254,8 +257,8 @@ def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
                 u,v = (n-1,n-1)
                 for o in range(4):
                     solver.add_clause([-jig_vars[(y,x-1,u-1,v,o)], -jig_vars[(y,x,u,v,o)]])
-                    solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
-        else:
+                    solver.add_clause([-jig_vars[(y+1,x,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])"""
+        """else:
             for u,v in product([n-1], range(1,n-1)):
                 if random.random() > random_var:
                     for o in range(4):
@@ -395,7 +398,7 @@ def find_neighbours_vars(y,x,i,j,o, n,jig_vars, solver, pool,random_var=0.5):
                         solver.add_clause([-jig_vars[(y,x-1,u,v-1,o)], -jig_vars[(y,x,u,v,o)]])
                         solver.add_clause([-jig_vars[(y+1,x,u+1,v,o)], -jig_vars[(y,x,u,v,o)]])
                         solver.add_clause([-jig_vars[(y,x+1,u,v+1,o)], -jig_vars[(y,x,u,v,o)]])
-
+"""
 
     
 
@@ -554,7 +557,7 @@ def scramble_pieces(n, m, jigs):
 
 def jig_main(n=5,threshold=0,Same_pieces_k=0,same_neighbours_k=0,disable_rotations=0):
     q = 2*n*2.71**(-1/2)
-    m = int((2 + q)/2) - 1
+    m = int((2 + q)/2)
     print(f"Using m = {m}")
     m = 2*m + 1
     print(f"puzzle should have 2 < m < {q} connection types")
@@ -567,7 +570,11 @@ def jig_main(n=5,threshold=0,Same_pieces_k=0,same_neighbours_k=0,disable_rotatio
         for x in range(n):
             initial_edges[(y, x)] = [int(puzzle[y][x][0]), int(puzzle[y][x][1]), int(puzzle[y][x][2]), int(puzzle[y][x][3])]
     
+
+
+
     solve_this_puzzle = initial_edges
+   
 
     solutions = solve(n, 
                       m, 

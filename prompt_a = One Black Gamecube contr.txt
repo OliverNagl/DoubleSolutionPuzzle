@@ -1,2 +1,0 @@
-prompt_a = "One Black Gamecube controller, with white background"
-prompt_b = "Cute black turtle viewed from above"
