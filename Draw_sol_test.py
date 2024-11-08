@@ -111,7 +111,7 @@ class JigsawPiece:
         return " ".join(path_d)
 
 class JigsawPuzzle:
-    def __init__(self, matrix, piece_size=26, tab_size=10):
+    def __init__(self, matrix, piece_size=26, tab_size=9):
         self.matrix = matrix
         self.piece_size = piece_size
         self.tab_size = tab_size
@@ -142,10 +142,13 @@ class JigsawPuzzle:
 # Example usage
 # Define a matrix of connection types for a 3x3 puzzle
 # Each entry is a list of four integers representing connection types [right, down, left, up]
-sample_number = 61
-size = 5
-conn_types = 11
+sample_number = 10
+size = 6
+conn_types = 7
 puzzle = np.load(f"Solutions/Solution_{size}_{conn_types}_0_{sample_number}.npy")
 
+# Drop the last two entries of the (n,n,6) matrix making it (n,n,4) and convert all entries to integers$$
+puzzle = puzzle[:,:,:4].astype(int)
+print(puzzle)
 puzzle = JigsawPuzzle(puzzle)
 puzzle.draw("jigsaw_puzzle.svg")
