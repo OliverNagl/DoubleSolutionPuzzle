@@ -111,7 +111,7 @@ class JigsawPiece:
         return " ".join(path_d)
 
 class JigsawPuzzle:
-    def __init__(self, matrix, piece_size=26, tab_size=9):
+    def __init__(self, matrix, piece_size=43, tab_size=15):
         self.matrix = matrix
         self.piece_size = piece_size
         self.tab_size = tab_size
