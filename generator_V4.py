@@ -33,11 +33,19 @@ def generate_jigsaw_puzzle(n, m=5, initialized_connections=0):
         connection_value = random.randint(1, m-1)
         
         if direction == 2:  # Bottom connection
-            puzzle[i, j, 2] = connection_value  # Set bottom of current piece
-            puzzle[i + 1, j, 0] = connection_value  # Set top of piece below
+            if connection_value % 2 == 0:
+                puzzle[i, j, 2] = connection_value  # Set bottom of current piece
+                puzzle[i + 1, j, 0] = connection_value-1  # Set top of piece below
+            else:
+                puzzle[i, j, 2] = connection_value
+                puzzle[i + 1, j, 0] = connection_value+1
         elif direction == 1:  # Right connection
-            puzzle[i, j, 1] = connection_value  # Set right of current piece
-            puzzle[i, j + 1, 3] = connection_value  # Set left of piece to the right
+            if connection_value % 2 == 0:
+                puzzle[i, j, 1] = connection_value
+                puzzle[i, j + 1, 3] = connection_value-1
+            else:
+                puzzle[i, j, 1] = connection_value  # Set right of current piece
+                puzzle[i, j + 1, 3] = connection_value +1  # Set left of piece to the right
 
     return puzzle
 

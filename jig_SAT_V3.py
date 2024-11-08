@@ -64,7 +64,7 @@ def print_solution(model, puzzle_vars, n, m, jig_vars=None, mapped_jig_vars=None
         
     return [solution_matrix0, solution_matrix1]
 
-def constraints(n, m, puzzle, solver):
+def constraints(n, m, puzzle, solver,balance,row_constraint):
     edge_vars = {}
     id_pool = IDPool()
 
@@ -88,6 +88,7 @@ def constraints(n, m, puzzle, solver):
             if connection == None:
                 continue
             conn_vars.append(edge_vars[(y, x, side, connection,0)])
+            
         enforce_piece_id_and_connection_type(solver, conn_vars, jig_id)
 
         #enforce that the piece is only used once/is used
@@ -101,6 +102,7 @@ def constraints(n, m, puzzle, solver):
             if connection == None:
                 continue
             conn_vars.append(edge_vars[(y, x, side, connection,1)])
+            
         enforce_piece_id_and_connection_type(solver, conn_vars, jig_id)
 
         #enforce that the piece is only used once/ is used
@@ -113,6 +115,46 @@ def constraints(n, m, puzzle, solver):
                     solver.add_clause([-edge_vars[(i, j, side, 0,1)]])
                     solver.add_clause([-edge_vars[(i, j, side, 0,0)]])
     
+    #enforce that edge pieces have no connection type 0 to the inside
+    for i in [0,n-1]:
+        for j in [0,n-1]:
+            if i == 0:
+                solver.add_clause([-edge_vars[(i, j, 2, 0,1)]])
+                solver.add_clause([-edge_vars[(i, j, 2, 0,0)]])
+                if not j == n-1:
+                    solver.add_clause([-edge_vars[(i, j, 1, 0,1)]])
+                    solver.add_clause([-edge_vars[(i, j, 1, 0,0)]])
+                if not j == 0:
+                    solver.add_clause([-edge_vars[(i, j, 3, 0,1)]])
+                    solver.add_clause([-edge_vars[(i, j, 3, 0,0)]])
+            elif i == n-1:
+                solver.add_clause([-edge_vars[(i, j, 0, 0,1)]])
+                solver.add_clause([-edge_vars[(i, j, 0, 0,0)]])
+                if not j == n-1:
+                    solver.add_clause([-edge_vars[(i, j, 1, 0,1)]])
+                    solver.add_clause([-edge_vars[(i, j, 1, 0,0)]])
+                if not j == 0:
+                    solver.add_clause([-edge_vars[(i, j, 3, 0,1)]])
+                    solver.add_clause([-edge_vars[(i, j, 3, 0,0)]])
+            if j == 0:
+                solver.add_clause([-edge_vars[(i, j, 1, 0,1)]])
+                solver.add_clause([-edge_vars[(i, j, 1, 0,0)]])
+                if not i == n-1:
+                    solver.add_clause([-edge_vars[(i, j, 2, 0,1)]])
+                    solver.add_clause([-edge_vars[(i, j, 2, 0,0)]])
+                if not i == 0:
+                    solver.add_clause([-edge_vars[(i, j, 0, 0,1)]])
+                    solver.add_clause([-edge_vars[(i, j, 0, 0,0)]])
+            if j == n-1:
+                solver.add_clause([-edge_vars[(i, j, 3, 0,1)]])
+                solver.add_clause([-edge_vars[(i, j, 3, 0,0)]])
+                if not i == n-1:
+                    solver.add_clause([-edge_vars[(i, j, 2, 0,1)]])
+                    solver.add_clause([-edge_vars[(i, j, 2, 0,0)]])
+                if not i == 0:
+                    solver.add_clause([-edge_vars[(i, j, 0, 0,1)]])
+                    solver.add_clause([-edge_vars[(i, j, 0, 0,0)]])
+
     #enforce that each piece has at least one connection (no None)
     for i in range(n):
         for j in range(n):
@@ -124,9 +166,24 @@ def constraints(n, m, puzzle, solver):
     for (y, x, o), (i,j,o1) in mapping_.items():
         for side in range(4):
             for conn in range(m):
-                if puzzle[(y,x,o)] == None:
-                    solver.add_clause([edge_vars[(i, j, (side+o1)%4, conn, 1)], -edge_vars[(y, x, o, conn, 0)]])
-             
+                rot = (side+o1)%4
+                solver.add_clause([edge_vars[(i, j, rot, conn, 1)], -edge_vars[(y, x, o, conn, 0)]])
+                solver.add_clause([-edge_vars[(i, j, rot, conn, 1)], edge_vars[(y, x, o, conn, 0)]])
+
+    #enforce that a given connection type is only used a certain amount of times
+
+    for conn in range(m):
+        lits0 = []
+        lits1 = []
+        for i in range(n):
+            for j in range(n):
+                for side in range(4):
+                    lits0.append(edge_vars[(i, j, side, conn, 0)])
+
+        card  = CardEnc.atmost(lits=lits0, bound=balance, encoding=1, vpool=id_pool)
+        solver.append_formula(card)
+                        
+
 
     # Enforce connection matching between adjacent pieces
     for i in range(n):
@@ -152,9 +209,9 @@ def constraints(n, m, puzzle, solver):
 
 
 
-def solve(n,m,puzzle,verbose=True):
+def solve(n,m,puzzle,verbose=True,balance=10000,row_constraint=100):
     solver = CryptoMinisat()
-    edge_vars, jig_vars,mapped_jig_vars, pool, piece_mapping = constraints(n, m, puzzle, solver)
+    edge_vars, jig_vars,mapped_jig_vars, pool, piece_mapping = constraints(n, m, puzzle, solver,balance,row_constraint)
 
     solver.solve()
     model = solver.get_model()
@@ -162,18 +219,19 @@ def solve(n,m,puzzle,verbose=True):
     solutions = []
     if model is not None:
         print("Solution found!")
+        print("---------------------------")
+        print("Solution found!")
         solutions = print_solution(model, edge_vars, n, m, jig_vars=jig_vars, mapped_jig_vars=mapped_jig_vars, verbose=verbose)
-    
-    print(f"Found {len(solutions)} solutions")
+    if verbose:
+        print(f"Found {len(solutions)} solutions")
     return solutions, piece_mapping
 
 
-def jig_main(n=5,initialized_connections=0,verbose=False):
-    q = 2*n*2.71**(-1/2)
-    m = int((2 + q)/2)
-    print(f"Using m = {m}")
+def jig_main(n=5,initialized_connections=0, m=2, verbose=False, balance=10000,row_constraint=100):
+    
+    if verbose:
+        print(f"Using m = {m}")
     m = 2*m + 1
-    print(f"puzzle should have 2 < m < {q} connection types")
     
     puzzle = generate_jigsaw_puzzle(n, m=m, initialized_connections=initialized_connections)
 
@@ -200,7 +258,9 @@ def jig_main(n=5,initialized_connections=0,verbose=False):
     solutions, piece_mapping = solve(n, 
                       m, 
                       solve_this_puzzle,
-                      verbose=verbose)
+                      verbose=verbose,
+                      balance = balance,
+                      row_constraint=row_constraint)
     
     if len(solutions) > 1:
         save_solutions(solutions, n, m, piece_mapping)

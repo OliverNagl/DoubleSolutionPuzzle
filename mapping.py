@@ -102,7 +102,7 @@ def test_mapping():
     n = 9
     m = 9
     # Generate a simple placeholder initial puzzle configuration with pieces represented by unique integers for testing
-    puzzle = generate_jigsaw_puzzle(n, m)
+    puzzle = generate_jigsaw_puzzle(n, m, initialized_connections=16*n)
     initial_edges = {}
     for y in range(n):
         for x in range(n):
@@ -114,11 +114,13 @@ def test_mapping():
     for row in mat:
         print(row)
     # Map the puzzle
-    mapped_puzzle = mapping(n, m, initial_edges)
-
+    mapped_puzzle, mapping_ = mapping(n, m, initial_edges)
+    print("-----------------------------------------------------")
+    print(mapped_puzzle)
+    print("-----------------------------------------------------")
     # Print the final mapped puzzle configuration in matrix form
     mat1 = [[None for _ in range(m)] for _ in range(n)]
-    for (y, x, o), piece in mapped_puzzle.items():
+    for (y, x, o), piece in mapping_.items():
         mat1[y][x] = piece
     for row in mat1:
         print(row)
