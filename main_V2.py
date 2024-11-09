@@ -16,14 +16,14 @@ if __name__ == "__main__":
     start_time = time.time()
     process = psutil.Process()
     start_memory = process.memory_info().rss
-    for n in range(15,20):
+    for n in range(10,11):
         q = 2*n*2.71**(-1/2)
         m = int((2 + q)/2) + 1
-        balance =  int((2*n**2-2*n)/2)
+        balance =  int((2*n**2-2*n)/3)
         row_constraint = int(n)
         
         for i in range(3,5):
-            for j in range(10):
+            for j in range(20):
                 main(n, initialized_connections = i, m=m, balance=balance,row_constraint = row_constraint, verbose=True)   
             # Print performance metrics
             # Calculate elapsed time and memory usage

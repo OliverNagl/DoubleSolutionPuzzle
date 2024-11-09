@@ -39,13 +39,13 @@ def plot_puzzle(ax, puzzle, color_mapping, puzzle_nr, piece_mapping):
                 color = color_mapping[(y_label, x_label)]
             rect = plt.Rectangle((rect_x, n-rect_y), piece_size, piece_size, facecolor=color, edgecolor='black', linewidth=2)
             ax.add_patch(rect)
+            fontsize = 4
+            ax.text(rect_x + 0.5, n-rect_y + 0.8, str(top), ha='center', fontsize=fontsize)    # Top
+            ax.text(rect_x + 0.8, n-rect_y + 0.5, str(right), va='center', fontsize=fontsize)  # Right
+            ax.text(rect_x + 0.5, n-rect_y + 0.1, str(bottom), ha='center', fontsize=fontsize) # Bottom
+            ax.text(rect_x + 0.1, n-rect_y + 0.5, str(left), va='center', fontsize=fontsize)   # Left
             
-            ax.text(rect_x + 0.5, n-rect_y + 0.8, str(top), ha='center', fontsize=10)    # Top
-            ax.text(rect_x + 0.8, n-rect_y + 0.5, str(right), va='center', fontsize=10)  # Right
-            ax.text(rect_x + 0.5, n-rect_y + 0.1, str(bottom), ha='center', fontsize=10) # Bottom
-            ax.text(rect_x + 0.1, n-rect_y + 0.5, str(left), va='center', fontsize=10)   # Left
-            
-            ax.text(rect_x + piece_size / 2, n- rect_y + piece_size / 2, f"({y_label}, {x_label})", ha='center', va='center', fontsize=10)
+            ax.text(rect_x + piece_size / 2, n- rect_y + piece_size / 2, f"({y_label}, {x_label})", ha='center', va='center', fontsize=fontsize)
 
     ax.set_xlim(0, len(puzzle) * piece_size)
     ax.set_ylim(0, len(puzzle) * piece_size)

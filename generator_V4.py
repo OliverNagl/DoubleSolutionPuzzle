@@ -57,6 +57,7 @@ def Add_connection_direction(puzzle, n):
                 connection = cell[i]
                 if connection is not None and connection != 0:
                      cell[i] = connection if connection % 2 else -(connection - 1)
+    return puzzle
 
 
 
