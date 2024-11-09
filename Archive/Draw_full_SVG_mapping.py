@@ -107,5 +107,5 @@ mapping = {
 
 # Create puzzle with a global background image
 background_image = "Puzzle_Solutions_after_diffusion/UV map.png"
-puzzle = Puzzle(grid, mapping, background_image, size=200, folder="Conn_types")
+puzzle = Puzzle(grid, mapping, background_image, size=255, folder="Conn_types")
 puzzle.draw("mapped_puzzle.svg")
