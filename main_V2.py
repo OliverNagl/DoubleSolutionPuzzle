@@ -16,24 +16,25 @@ if __name__ == "__main__":
     start_time = time.time()
     process = psutil.Process()
     start_memory = process.memory_info().rss
-    n = 5
-    balance =  int(8*n**2)
-    row_constraint = int(n)
-    q = 2*n*2.71**(-1/2)
-    m = int((2 + q)/2)
-    for i in range(0,20):
-        for j in range(4):
-            main(n, initialized_connections = i, m=m, balance=balance,row_constraint = row_constraint, verbose=True)   
-         # Print performance metrics
-        # Calculate elapsed time and memory usage
-        # Record end time and final resource usage
-        end_time = time.time()
-        end_memory = process.memory_info().rss
-        elapsed_time = end_time - start_time
-        memory_usage = end_memory - start_memory
-        print("------------------------------------------------------")
-        print(f"Elapsed time at {i}: {elapsed_time:.2f} seconds")
-        print(f"Memory usage at {i}: {memory_usage / (1024 * 1024):.2f} MB")
-        print("------------------------------------------------------")
+    for n in range(9,15):
+        q = 2*n*2.71**(-1/2)
+        m = int((2 + q)/2) + 1
+        balance =  int(8*n/(m-5))
+        row_constraint = int(n)
         
+        for i in range(3,20):
+            for j in range(200):
+                main(n, initialized_connections = i, m=m, balance=balance,row_constraint = row_constraint, verbose=True)   
+            # Print performance metrics
+            # Calculate elapsed time and memory usage
+            # Record end time and final resource usage
+            end_time = time.time()
+            end_memory = process.memory_info().rss
+            elapsed_time = end_time - start_time
+            memory_usage = end_memory - start_memory
+            print("------------------------------------------------------")
+            print(f"Elapsed time at {i}: {elapsed_time:.2f} seconds")
+            print(f"Memory usage at {i}: {memory_usage / (1024 * 1024):.2f} MB")
+            print("------------------------------------------------------")
+            
             
