@@ -19,11 +19,11 @@ if __name__ == "__main__":
     for n in range(10,11):
         q = 2*n*2.71**(-1/2)
         m = int((2 + q)/2) + 1
-        balance =  int((2*n**2-2*n)/3)
+        balance =  int((2*n**2-2*n)/4)
         row_constraint = int(n)
         
-        for i in range(3,5):
-            for j in range(20):
+        for i in range(4,6):
+            for j in range(50):
                 main(n, initialized_connections = i, m=m, balance=balance,row_constraint = row_constraint, verbose=True)   
             # Print performance metrics
             # Calculate elapsed time and memory usage
