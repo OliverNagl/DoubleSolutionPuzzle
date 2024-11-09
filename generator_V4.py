@@ -50,23 +50,13 @@ def generate_jigsaw_puzzle(n, m=5, initialized_connections=0):
     return puzzle
 
 def Add_connection_direction(puzzle, n):
-    for y in range(0, n):
-        for x in range(0, n):
-            if not puzzle[y][x]== None:
-                for i in range(0,4):
-                    if not puzzle[y][x][i]== None:
-                        if puzzle[y][x][i] % 2 == 0:
-                            if puzzle[y][x][i] == 0:
-                                pass
-                            else:
-                                puzzle[y][x][i] = -(puzzle[y][x][i]-1)
-                
-                        else:
-                            if puzzle[y][x][i] == 0:
-                                pass
-                            else:
-                                puzzle[y][x][i] = puzzle[y][x][i]
-    return puzzle
+    for y in range(n):
+        for x in range(n):
+            cell = puzzle[y][x]
+            for i in range(0,4):
+                connection = cell[i]
+                if connection is not None and connection != 0:
+                     cell[i] = connection if connection % 2 else -(connection - 1)
 
 
 

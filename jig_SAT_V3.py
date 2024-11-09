@@ -22,32 +22,25 @@ def print_solution(model, puzzle_vars, n, m, jig_vars=None, mapped_jig_vars=None
     """
     Print the solution matrices with piece IDs.
     """
-    reverse_puzzle_vars = {value: key for key, value in puzzle_vars.items()}
-    if jig_vars is not None:
-        revers_jig_vars = {value: key for key, value in jig_vars.items()}
-    if mapped_jig_vars is not None:
-        revers_mapped_jig_vars = {value: key for key, value in mapped_jig_vars.items()}
-
-    solution_matrix1 = [[None for _ in range(n)] for _ in range(n)]
-    solution_matrix0 = [[None for _ in range(n)] for _ in range(n)]
+   # Pre-initialize solution matrices with None
+    solution_matrix0 = [[[None] * 4 for _ in range(n)] for _ in range(n)]
+    solution_matrix1 = [[[None] * 4 for _ in range(n)] for _ in range(n)]
 
     for (y,x,o), jig_var in jig_vars.items():
         if jig_var in model:
             for side in range(4):
                 for conntype in range(m):
                     if puzzle_vars[(y,x,side,conntype,0)] in model:
-                        if solution_matrix0[y][x] is None:
-                            solution_matrix0[y][x] = [None] * 4
                         solution_matrix0[y][x][side] = conntype
+                        break
     
     for (y,x,o), jig_var in mapped_jig_vars.items():
         if jig_var in model:
             for side in range(4):
                 for conntype in range(m):
                     if puzzle_vars[(y,x,side,conntype,1)] in model:
-                        if solution_matrix1[y][x] is None:
-                            solution_matrix1[y][x] = [None] * 4
                         solution_matrix1[y][x][side] = conntype
+                        break
             
 
     

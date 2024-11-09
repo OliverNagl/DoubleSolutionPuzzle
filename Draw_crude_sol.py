@@ -54,9 +54,9 @@ def plot_puzzle(ax, puzzle, color_mapping, puzzle_nr, piece_mapping):
 
 
 # Sample input array (simplified for testing)
-sample_number = 11
-size = 8
-conn_types = 13
+sample_number = 14
+size = 15
+conn_types = 23
 puzzle = np.load(f"Solutions/Solution_{size}_{conn_types}_0_{sample_number}.npy")
 puzzle_sol2 = np.load(f"Solutions/Solution_{size}_{conn_types}_1_{sample_number}.npy")
 piece_mapping = np.load(f"Solutions/Mapping_{size}_{conn_types}_{sample_number}.npy", allow_pickle=True).item()
