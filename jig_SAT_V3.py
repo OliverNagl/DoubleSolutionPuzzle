@@ -164,11 +164,11 @@ def constraints(n, m, puzzle, solver,balance,row_constraint):
 
     #enforce that if a connection is true in the mapped puzzle, it is also true in the original puzzle, considering the rotation and displacement
     for (y, x, o), (i,j,o1) in mapping_.items():
-        for side in range(4):
+        for side1 in range(4):
             for conn in range(m):
-                rot = (side+o1)%4
-                solver.add_clause([edge_vars[(i, j, rot, conn, 1)], -edge_vars[(y, x, o, conn, 0)]])
-                solver.add_clause([-edge_vars[(i, j, rot, conn, 1)], edge_vars[(y, x, o, conn, 0)]])
+                rot = (side1+o1)%4
+                solver.add_clause([edge_vars[(i, j, rot, conn, 1)], -edge_vars[(y, x, side1, conn, 0)]])
+                solver.add_clause([-edge_vars[(i, j, rot, conn, 1)], edge_vars[(y, x, side1, conn, 0)]])
 
     #enforce that a given connection type is only used a certain amount of times
 
