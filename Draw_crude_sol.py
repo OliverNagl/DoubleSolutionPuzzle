@@ -54,7 +54,7 @@ def plot_puzzle(ax, puzzle, color_mapping, puzzle_nr, piece_mapping):
 
 
 # Sample input array (simplified for testing)
-sample_number = 19
+sample_number = 20
 size = 10
 conn_types = 17
 puzzle = np.load(f"Solutions/Solution_{size}_{conn_types}_0_{sample_number}.npy")

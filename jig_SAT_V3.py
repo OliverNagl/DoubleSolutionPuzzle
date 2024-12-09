@@ -109,8 +109,8 @@ def constraints(n, m, puzzle, solver,balance,row_constraint):
                     solver.add_clause([-edge_vars[(i, j, side, 0,0)]])
     
     #enforce that edge pieces have no connection type 0 to the inside
-    for i in [0,n-1]:
-        for j in [0,n-1]:
+    for i in range(n):
+        for j in range(n):
             if i == 0:
                 solver.add_clause([-edge_vars[(i, j, 2, 0,1)]])
                 solver.add_clause([-edge_vars[(i, j, 2, 0,0)]])
