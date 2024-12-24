@@ -10,45 +10,7 @@ class JigsawPiece:
         self.size = size
         self.tab_size = tab_size
         self.drawing = svgwrite.Drawing(size=(size, size))
-
-    # Existing generate_curve and generate_knob methods remain the same
-    def generate_curve(self, x, y, dx, dy, conn_type):
-        # Generates a curve path for a given connection type
-        end_x, end_y = x + dx, y + dy
-        mid_x, mid_y = x + dx / 2, y + dy / 2
-        angle = math.atan2(dy, dx)
         
-        control_points = {
-        # Outward curves (positive knob shapes)
-        1: (mid_x + self.tab_size * 0.5 * math.sin(angle), mid_y - self.tab_size * 1.2 * math.cos(angle)),
-        3: (mid_x + self.tab_size * 0.8 * math.sin(angle), mid_y - self.tab_size * 1.0 * math.cos(angle)),
-        5: (mid_x + self.tab_size * math.sin(angle), mid_y - self.tab_size * math.cos(angle)),
-        7: (mid_x + 1.1 * self.tab_size * math.sin(angle), mid_y - 1.1 * self.tab_size * math.cos(angle)),
-        9: (mid_x + self.tab_size * 0.7 * math.sin(angle), mid_y - self.tab_size * 1.5 * math.cos(angle)),
-        11: (mid_x + 0.9 * self.tab_size * math.sin(angle), mid_y - self.tab_size * 0.9 * math.cos(angle)),
-        13: (mid_x + 1.2 * self.tab_size * math.sin(angle), mid_y - 1.4 * self.tab_size * math.cos(angle)),
-        15: (mid_x + 1.3 * self.tab_size * math.sin(angle), mid_y - 1.0 * self.tab_size * math.cos(angle)),
-
-        # Inward curves (negative knob shapes)
-        -1: (mid_x - self.tab_size * 0.5 * math.sin(angle), mid_y + self.tab_size * 1.2 * math.cos(angle)),
-        -3: (mid_x - self.tab_size * 0.8 * math.sin(angle), mid_y + self.tab_size * 1.0 * math.cos(angle)),
-        -5: (mid_x - self.tab_size * math.sin(angle), mid_y + self.tab_size * math.cos(angle)),
-        -7: (mid_x - 1.1 * self.tab_size * math.sin(angle), mid_y + 1.1 * self.tab_size * math.cos(angle)),
-        -9: (mid_x - self.tab_size * 0.7 * math.sin(angle), mid_y + self.tab_size * 1.5 * math.cos(angle)),
-        -11: (mid_x - 0.9 * self.tab_size * math.sin(angle), mid_y + self.tab_size * 0.9 * math.cos(angle)),
-        -13: (mid_x - 1.2 * self.tab_size * math.sin(angle), mid_y + 1.4 * self.tab_size * math.cos(angle)),
-        -15: (mid_x - 1.3 * self.tab_size * math.sin(angle), mid_y + 1.0 * self.tab_size * math.cos(angle)),
-
-        # 0: Flat edge, no curve
-        0: (mid_x, mid_y)}
-
-
-        
-        ctrl_x, ctrl_y = control_points.get(conn_type, (mid_x, mid_y))
-        return f"Q {ctrl_x} {ctrl_y} {end_x} {end_y}"
-
-    import math
-
     def generate_knob(self, x, y, dx, dy, conn_type):
         """
         Generates an interlocking tab or cut shape for each connection type.
@@ -63,8 +25,6 @@ class JigsawPiece:
 
         conn_type_factor = np.abs(conn_type)  # Connection type for the curve (positive)
         conn_type_factor = conn_type_factor/20
-
-        
 
         # Adjust direction for vertical or horizontal lines
         if dy != 0:  # Vertical segment
@@ -97,11 +57,11 @@ class JigsawPiece:
 
 
 
-    def create_path(self):
+    def create_path(self, x_offset, y_offset):
         size = self.size
         path_d = []
         
-        x, y = 0, 0
+        x, y = x_offset, y_offset
         path_d.append(f"M {x} {y}")
 
         directions = [
@@ -142,11 +102,11 @@ class JigsawPuzzle:
 
         connections = self.matrix[row][col]
         piece = JigsawPiece(connections, size=self.piece_size, tab_size=self.tab_size)
-        path_d = piece.create_path()
+        
     
         x_offset_initial = col * self.piece_size
         y_offset_initial = row * self.piece_size
-
+        path_d = piece.create_path(x_offset_initial,y_offset_initial)
         # Define a clipPath for the piece
         clip_path_id = f"clip_{row}_{col}"
         clip_path = self.drawing.defs.add(self.drawing.clipPath(id=clip_path_id))

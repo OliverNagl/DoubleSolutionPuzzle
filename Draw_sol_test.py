@@ -10,78 +10,48 @@ class JigsawPiece:
         self.tab_size = tab_size
         self.drawing = svgwrite.Drawing(size=(size, size))
 
-    def generate_curve(self, x, y, dx, dy, conn_type):
-        # Generates a curve path for a given connection type
-        end_x, end_y = x + dx, y + dy
-        mid_x, mid_y = x + dx / 2, y + dy / 2
-        angle = math.atan2(dy, dx)
-        
-        control_points = {
-        # Outward curves (positive knob shapes)
-        1: (mid_x + self.tab_size * 0.5 * math.sin(angle), mid_y - self.tab_size * 1.2 * math.cos(angle)),
-        3: (mid_x + self.tab_size * 0.8 * math.sin(angle), mid_y - self.tab_size * 1.0 * math.cos(angle)),
-        5: (mid_x + self.tab_size * math.sin(angle), mid_y - self.tab_size * math.cos(angle)),
-        7: (mid_x + 1.1 * self.tab_size * math.sin(angle), mid_y - 1.1 * self.tab_size * math.cos(angle)),
-        9: (mid_x + self.tab_size * 0.7 * math.sin(angle), mid_y - self.tab_size * 1.5 * math.cos(angle)),
-        11: (mid_x + 0.9 * self.tab_size * math.sin(angle), mid_y - self.tab_size * 0.9 * math.cos(angle)),
-        13: (mid_x + 1.2 * self.tab_size * math.sin(angle), mid_y - 1.4 * self.tab_size * math.cos(angle)),
-        15: (mid_x + 1.3 * self.tab_size * math.sin(angle), mid_y - 1.0 * self.tab_size * math.cos(angle)),
-
-        # Inward curves (negative knob shapes)
-        -1: (mid_x - self.tab_size * 0.5 * math.sin(angle), mid_y + self.tab_size * 1.2 * math.cos(angle)),
-        -3: (mid_x - self.tab_size * 0.8 * math.sin(angle), mid_y + self.tab_size * 1.0 * math.cos(angle)),
-        -5: (mid_x - self.tab_size * math.sin(angle), mid_y + self.tab_size * math.cos(angle)),
-        -7: (mid_x - 1.1 * self.tab_size * math.sin(angle), mid_y + 1.1 * self.tab_size * math.cos(angle)),
-        -9: (mid_x - self.tab_size * 0.7 * math.sin(angle), mid_y + self.tab_size * 1.5 * math.cos(angle)),
-        -11: (mid_x - 0.9 * self.tab_size * math.sin(angle), mid_y + self.tab_size * 0.9 * math.cos(angle)),
-        -13: (mid_x - 1.2 * self.tab_size * math.sin(angle), mid_y + 1.4 * self.tab_size * math.cos(angle)),
-        -15: (mid_x - 1.3 * self.tab_size * math.sin(angle), mid_y + 1.0 * self.tab_size * math.cos(angle)),
-
-        # 0: Flat edge, no curve
-        0: (mid_x, mid_y)}
-
-
-        
-        ctrl_x, ctrl_y = control_points.get(conn_type, (mid_x, mid_y))
-        return f"Q {ctrl_x} {ctrl_y} {end_x} {end_y}"
-
     def generate_knob(self, x, y, dx, dy, conn_type):
         """
         Generates an interlocking tab or cut shape for each connection type.
         :param x, y: Start point of the segment.
         :param dx, dy: Directional increments for the end point.
-        :param conn_type: Connection type for the curve (-7 to 7, excluding 0).
+        :param conn_type: Connection type for the curve (-n for inward, n for outward).
         :return: SVG path segment as a string.
         """
-        end_x, end_y = x + dx, y + dy
-        mid_x, mid_y = x + dx / 2, y + dy / 2
-        angle = math.atan2(dy, dx)
+        # Calculate basic parameters
+        cx, cy = x, y  # Current starting point
+        s = math.sqrt(dx**2 + dy**2)  # Side length of the segment
 
-        # Define the circular tab size and control points for smooth interlocking shapes
-        radius = self.tab_size / 2
-        neck_length = radius
-        tab_length = radius
+        conn_type_factor = np.abs(conn_type)  # Connection type for the curve (positive)
+        conn_type_factor = conn_type_factor/20
 
-        # Calculate offset for tab or cut
-        if conn_type > 0:  # Outward tab
-            neck_x = mid_x + neck_length * math.cos(angle + math.pi / 2)
-            neck_y = mid_y + neck_length * math.sin(angle + math.pi / 2)
-            outer_x = mid_x + tab_length * math.cos(angle + math.pi / 2)
-            outer_y = mid_y + tab_length * math.sin(angle + math.pi / 2)
-        else:  # Inward cut
-            neck_x = mid_x - neck_length * math.cos(angle + math.pi / 2)
-            neck_y = mid_y - neck_length * math.sin(angle + math.pi / 2)
-            outer_x = mid_x - tab_length * math.cos(angle + math.pi / 2)
-            outer_y = mid_y - tab_length * math.sin(angle + math.pi / 2)
+        # Adjust direction for vertical or horizontal lines
+        if dy != 0:  # Vertical segment
+            orientation = 1 if dy > 0 else -1
+            tab_path = [
+                f"L {cx} {cy + s * 0.34 * orientation}",
+                f"C {cx} {cy + s * 0.5 * orientation}, {cx + s * -0.15} {cy + s * 0.4 * orientation}, {cx + s * -0.15} {cy + s * 0.4 * orientation}",
+                f"C {cx + s * -0.3} {cy + s * 0.3 * orientation}, {cx + s * -0.3} {cy + s * 0.5 * orientation}, {cx + s * -0.3} {cy + s * 0.5 * orientation}",
+                f"C {cx + s * -0.3} {cy + s * 0.7 * orientation}, {cx + s * -0.15} {cy + s * 0.6 * orientation}, {cx + s * -0.15} {cy + s * 0.6 * orientation}",
+                f"C {cx} {cy + s * 0.5 * orientation}, {cx} {cy + s * 0.65 * orientation}, {cx} {cy + s * 0.65 * orientation}",
+                f"L {cx} {cy + s * orientation}"
+            ]
+        else:  # Horizontal segment
+            orientation = 1 if dx > 0 else -1
+            tab_path = [
+                f"L {cx + s * 0.34 * orientation} {cy}",
+                f"C {cx + s * 0.5 * orientation} {cy}, {cx + s * 0.4 * orientation} {cy - s * 0.15}, {cx + s * 0.4 * orientation} {cy - s * 0.15}",
+                f"C {cx + s * 0.3 * orientation} {cy - s * 0.3}, {cx + s * 0.5 * orientation} {cy - s * 0.3}, {cx + s * 0.5 * orientation} {cy - s * 0.3}",
+                f"C {cx + s * 0.7 * orientation} {cy - s * 0.3}, {cx + s * 0.6 * orientation} {cy - s * 0.15}, {cx + s * 0.6 * orientation} {cy - s * 0.15}",
+                f"C {cx + s * 0.5 * orientation} {cy}, {cx + s * 0.65 * orientation} {cy}, {cx + s * 0.65 * orientation} {cy}",
+                f"L {cx + s * orientation} {cy}"
+            ]
 
-        # Create smooth path for interlocking tabs or cuts
-        path_segment = (
-            f"L {neck_x} {neck_y} "
-            f"A {radius} {radius} 0 0 1 {outer_x} {outer_y} "
-            f"A {radius} {radius} 0 0 1 {neck_x} {neck_y} "
-            f"L {end_x} {end_y}"
-        )
-        return path_segment
+        # Reverse path for inward tabs (negative connection types)
+        if conn_type < 0:
+            tab_path = [segment.replace('C', 'c').replace('L', 'l') for segment in reversed(tab_path)]
+
+        return " ".join(tab_path)
 
     def create_path(self):
         # Generate SVG path for the jigsaw piece
