@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 import base64
 from io import BytesIO
+import random
 class JigsawPiece:
     def __init__(self, connections, size=26, tab_size=20):
         self.connections = connections
@@ -21,43 +22,65 @@ class JigsawPiece:
         """
         # Calculate basic parameters
         cx, cy = x, y  # Current starting point
-        s = math.sqrt(dx**2 + dy**2)  # Side length of the segment
+        s = max(abs(dx),abs(dy))  # Side length of the segment
 
         conn_type_factor = np.abs(conn_type)  # Connection type for the curve (positive)
         conn_type_factor = conn_type_factor/20
 
+        # Define control points for the Bezier curve
+        random.seed(conn_type_factor)
+
+        # Generate control points for the Bezier curve
+        one = random.uniform(0.34, 0.34)
+        two = random.uniform(0.5, 0.5)
+        three = random.uniform(0.15, 0.15)
+        four = random.uniform(0.3, 0.3)
+        five = random.uniform(0.7, 0.7)
+        six = random.uniform(0.65, 0.65)
+        seven = random.uniform(0.4, 0.4)
+        eight = random.uniform(0.6, 0.6)
+
         # Adjust direction for vertical or horizontal lines
         if dy != 0:  # Vertical segment
             orientation = 1 if dy > 0 else -1
+            
+            if orientation > 0:
+                inny_outy = 1 if conn_type < 0 else -1
+            elif orientation < 0:
+                inny_outy = 1 if conn_type > 0 else -1
+
             tab_path = [
-                f"L {cx} {cy + s * 0.34 * orientation}",
-                f"C {cx} {cy + s * 0.5 * orientation}, {cx + s * -0.15} {cy + s * 0.4 * orientation}, {cx + s * -0.15} {cy + s * 0.4 * orientation}",
-                f"C {cx + s * -0.3} {cy + s * 0.3 * orientation}, {cx + s * -0.3} {cy + s * 0.5 * orientation}, {cx + s * -0.3} {cy + s * 0.5 * orientation}",
-                f"C {cx + s * -0.3} {cy + s * 0.7 * orientation}, {cx + s * -0.15} {cy + s * 0.6 * orientation}, {cx + s * -0.15} {cy + s * 0.6 * orientation}",
-                f"C {cx} {cy + s * 0.5 * orientation}, {cx} {cy + s * 0.65 * orientation}, {cx} {cy + s * 0.65 * orientation}",
+                f"L {cx} {cy + s * one * orientation}",
+                f"C {cx} {cy + s * two * orientation}, {cx + s * -three * inny_outy} {cy + s * seven * orientation}, {cx + s * -three* inny_outy} {cy + s * seven * orientation}",
+                f"C {cx + s * -four* inny_outy} {cy + s * four * orientation}, {cx + s * -four* inny_outy} {cy + s * two * orientation}, {cx + s * -four* inny_outy} {cy + s * two * orientation}",
+                f"C {cx + s * -four* inny_outy} {cy + s * five * orientation}, {cx + s * -three* inny_outy} {cy + s * eight * orientation}, {cx + s * -three* inny_outy} {cy + s * eight * orientation}",
+                f"C {cx} {cy + s * two * orientation}, {cx} {cy + s * six * orientation}, {cx} {cy + s * six * orientation}",
                 f"L {cx} {cy + s * orientation}"
             ]
         else:  # Horizontal segment
             orientation = 1 if dx > 0 else -1
+            if orientation > 0:
+                inny_outy = 1 if conn_type > 0 else -1
+            elif orientation < 0:
+                inny_outy = 1 if conn_type < 0 else -1
+            
             tab_path = [
-                f"L {cx + s * 0.34 * orientation} {cy}",
-                f"C {cx + s * 0.5 * orientation} {cy}, {cx + s * 0.4 * orientation} {cy - s * 0.15}, {cx + s * 0.4 * orientation} {cy - s * 0.15}",
-                f"C {cx + s * 0.3 * orientation} {cy - s * 0.3}, {cx + s * 0.5 * orientation} {cy - s * 0.3}, {cx + s * 0.5 * orientation} {cy - s * 0.3}",
-                f"C {cx + s * 0.7 * orientation} {cy - s * 0.3}, {cx + s * 0.6 * orientation} {cy - s * 0.15}, {cx + s * 0.6 * orientation} {cy - s * 0.15}",
-                f"C {cx + s * 0.5 * orientation} {cy}, {cx + s * 0.65 * orientation} {cy}, {cx + s * 0.65 * orientation} {cy}",
+                f"L {cx + s * one * orientation} {cy}",
+                f"C {cx + s * two * orientation} {cy}, {cx + s * seven * orientation} {cy - s * three*inny_outy}, {cx + s * seven * orientation} {cy - s * three*inny_outy}",
+                f"C {cx + s * four * orientation} {cy - s * four*inny_outy}, {cx + s * two * orientation} {cy - s * four*inny_outy}, {cx + s * two * orientation} {cy - s * four*inny_outy}",
+                f"C {cx + s * five * orientation} {cy - s * four*inny_outy}, {cx + s * eight * orientation} {cy - s * three*inny_outy}, {cx + s * eight * orientation} {cy - s * three*inny_outy}",
+                f"C {cx + s * two * orientation} {cy}, {cx + s * six * orientation} {cy}, {cx + s * six * orientation} {cy}",
                 f"L {cx + s * orientation} {cy}"
             ]
 
-        # Reverse path for inward tabs (negative connection types)
-        if conn_type < 0:
-            tab_path = [segment.replace('C', 'c').replace('L', 'l') for segment in reversed(tab_path)]
-
+        # Inverse (mirror) the path if the conn_type is < 0
         return " ".join(tab_path)
 
 
 
 
-    def create_path(self, x_offset, y_offset):
+
+    def create_path(self, x_offset=0, y_offset=0):
         size = self.size
         path_d = []
         
@@ -85,7 +108,7 @@ class JigsawPiece:
 
 
 class JigsawPuzzle:
-    def __init__(self, matrix, piece_size=26, tab_size=15):
+    def __init__(self, matrix, piece_size=43, tab_size=15):
         self.matrix = matrix
         self.piece_size = piece_size
         self.tab_size = tab_size
@@ -104,16 +127,21 @@ class JigsawPuzzle:
         piece = JigsawPiece(connections, size=self.piece_size, tab_size=self.tab_size)
         
     
-        x_offset_initial = col * self.piece_size
-        y_offset_initial = row * self.piece_size
-        path_d = piece.create_path(x_offset_initial,y_offset_initial)
+        # Generate the SVG path for the jigsaw piece
+        path_d = piece.create_path(x_offset=0,y_offset=0)
+        
+
         # Define a clipPath for the piece
         clip_path_id = f"clip_{row}_{col}"
         clip_path = self.drawing.defs.add(self.drawing.clipPath(id=clip_path_id))
-        piece_path = self.drawing.path(d=path_d)
+        piece_path = self.drawing.path(d=path_d, stroke="none")
+
+        # add the path to the clipPath
         clip_path.add(piece_path)
         
         # Create a background image with the clipped path
+        x_offset_initial = col * self.piece_size
+        y_offset_initial = row * self.piece_size
         clipped_image = self.drawing.image(
             href=background_image_data,
             insert=(-x_offset_initial, -y_offset_initial),
@@ -126,23 +154,19 @@ class JigsawPuzzle:
         y_offset_target = target_row * self.piece_size
         print(f"offset_target ({y_offset_target}, {x_offset_target}) with rotation {rotation*90} degrees")  # Debugging statement
 
-        
         # Move and rotate the clipped image
-        clipped_image.translate(x_offset_target, y_offset_target)
-        if rotation != 0:
-            cx, cy = x_offset_target, y_offset_target
-            #,clipped_image.rotate(rotation*90)
-
+        clipped_image["transform"] = f"translate({x_offset_target}, {y_offset_target}) rotate({rotation*90}, {self.piece_size/2}, {self.piece_size/2})"
+        """clipped_image.translate(x_offset_target, y_offset_target)
+        clipped_image.rotate(rotation*90, center=(x_offset_target + self.piece_size/2, y_offset_target + self.piece_size/2))"""
+        
         # Add the path and the clipped image to the drawing
         self.drawing.add(clipped_image)
         
         # Add the path outline for the piece (optional)
         if outline:
-            piece_outline = self.drawing.path(d=path_d, fill="none", stroke="black", stroke_width=0.5)
-            piece_outline.translate(x_offset_target, y_offset_target)
-            if rotation != 0:
-                pass
-                #piece_outline.rotate(rotation*90, center=(cx, cy))
+            piece_outline = self.drawing.path(d=path_d, fill="none", stroke="black", stroke_width=0.1)
+            piece_outline["transform"] = f"translate({x_offset_target}, {y_offset_target}) rotate({rotation*90}, {self.piece_size/2}, {self.piece_size/2})"
+               #piece_outline.rotate(rotation*90, center=(x_offset_target + self.piece_size/2, y_offset_target + self.piece_size/2))
             self.drawing.add(piece_outline)
     
 
@@ -175,4 +199,4 @@ puzzle = JigsawPuzzle(puzzle_matrix)
 # Define mapping dictionary, e.g., (0, 0, 0) -> (1, 2, 90) maps (0,0) to (1,2) with a 90° rotation
 mapping = np.load(f"Solutions/Mapping_{size}_{conn_types}_{sample_number}.npy", allow_pickle=True).item()  # Define actual mappings as needed
 print(mapping)
-puzzle.draw(f"jigsaw_puzzle_mapped_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV map.png", mapping=mapping,outline=False)
+puzzle.draw(f"jigsaw_puzzle_mapped_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV map.png", mapping=mapping,outline=True)
