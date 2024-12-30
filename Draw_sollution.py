@@ -76,7 +76,7 @@ class JigsawPiece:
                 tab_path_str = " ".join(tab_path)
 
                 # Parse the path into a Path object
-                path = parse_path(tab_path_str)
+                path = parse_path(tab_path_str, current_pos=cx + cy * 1j)
 
                 mid_y = (cy + cy + s * orientation) / 2
                 # Step 2: Translate the path to move its midpoint to the origin
@@ -91,7 +91,7 @@ class JigsawPiece:
                 # Convert the final transformed path to a string
                 transformed_path_str = translated_path_2.d()
                 #remove everything until the first L of the string
-                transformed_path_str = transformed_path_str[transformed_path_str.find('L'):]
+                #transformed_path_str = transformed_path_str[transformed_path_str.find('L'):]
                 
         else:  # Horizontal segment
             orientation = 1 if dx > 0 else -1
@@ -122,9 +122,9 @@ class JigsawPiece:
 
                 # Convert the tab_path to a path string
                 tab_path_str = " ".join(tab_path)
-
+    
                 # Parse the path into a Path object
-                path = parse_path(tab_path_str)
+                path = parse_path(tab_path_str, current_pos=cx + cy * 1j)
 
                 mid_x = (cx + cx + s * orientation) / 2
                 # Step 2: Translate the path to move its midpoint to the origin
@@ -139,7 +139,7 @@ class JigsawPiece:
                 # Convert the final transformed path to a string
                 transformed_path_str = translated_path_2.d()
                 #remove everything until the first L of the string
-                transformed_path_str = transformed_path_str[transformed_path_str.find('L'):]
+                #transformed_path_str = transformed_path_str[transformed_path_str.find('L'):]
 
         return transformed_path_str
 
