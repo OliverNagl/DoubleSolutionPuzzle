@@ -5,13 +5,18 @@ from PIL import Image
 import base64
 from io import BytesIO
 import random
+from svgpathtools import parse_path, Path
+
+
 class JigsawPiece:
     def __init__(self, connections, size=26, tab_size=20):
+        # Initialize a jigsaw piece with connections, size, and tab size
+        assert len(connections) == 4, "Connections should have exactly four sides"
         self.connections = connections
         self.size = size
         self.tab_size = tab_size
         self.drawing = svgwrite.Drawing(size=(size, size))
-        
+
     def generate_knob(self, x, y, dx, dy, conn_type):
         """
         Generates an interlocking tab or cut shape for each connection type.
@@ -30,6 +35,7 @@ class JigsawPiece:
         # Define control points for the Bezier curve
         random.seed(conn_type_factor)
 
+        
         # Generate control points for the Bezier curve
         one = random.uniform(0.2, 0.3)
         two = random.uniform(0.45, 0.55)
@@ -56,22 +62,40 @@ class JigsawPiece:
                     f"C {cx + s * -four* inny_outy} {cy + s * four * orientation}, {cx + s * -four* inny_outy} {cy + s * two * orientation}, {cx + s * -four* inny_outy} {cy + s * two * orientation}",
                     f"C {cx + s * -four* inny_outy} {cy + s * five * orientation}, {cx + s * -three* inny_outy} {cy + s * eight * orientation}, {cx + s * -three* inny_outy} {cy + s * eight * orientation}",
                     f"C {cx} {cy + s * two * orientation}, {cx} {cy + s * six * orientation}, {cx} {cy + s * six * orientation}",
-                    f"L {cx} {cy + s * orientation}"
+                    f"L {cx} {cy + s * orientation}" 
                 ]
+                transformed_path_str = " ".join(tab_path)
             else:
-                orientation = orientation * -1
-                cy = cy - s * orientation
-
                 tab_path = [
-                    f"M {cx} {cy}",
                     f"L {cx} {cy + s * one * orientation}",
                     f"C {cx} {cy + s * two * orientation}, {cx + s * -three * inny_outy} {cy + s * seven * orientation}, {cx + s * -three* inny_outy} {cy + s * seven * orientation}",
                     f"C {cx + s * -four* inny_outy} {cy + s * four * orientation}, {cx + s * -four* inny_outy} {cy + s * two * orientation}, {cx + s * -four* inny_outy} {cy + s * two * orientation}",
                     f"C {cx + s * -four* inny_outy} {cy + s * five * orientation}, {cx + s * -three* inny_outy} {cy + s * eight * orientation}, {cx + s * -three* inny_outy} {cy + s * eight * orientation}",
                     f"C {cx} {cy + s * two * orientation}, {cx} {cy + s * six * orientation}, {cx} {cy + s * six * orientation}",
-                    f"L {cx} {cy + s * orientation}"
-                    f"M {cx} {cy}"
+                    f"L {cx} {cy + s * orientation}",
                 ]
+
+                # Convert the tab_path to a path string
+                tab_path_str = " ".join(tab_path)
+
+                # Parse the path into a Path object
+                path = parse_path(tab_path_str)
+
+                mid_y = (cy + cy + s * orientation) / 2
+                # Step 2: Translate the path to move its midpoint to the origin
+                translated_path_1 = path.translated(0 - mid_y *1j)
+
+                # Step 3: Apply the scaling to flip the path over the x-axis (now at the midpoint)
+                scaled_path = translated_path_1.scaled(1, -1)
+
+                # Step 4: Translate the path back to its original position
+                translated_path_2 = scaled_path.translated(0 + mid_y *1j)
+
+                # Convert the final transformed path to a string
+                transformed_path_str = translated_path_2.d()
+                #remove everything until the first L of the string
+                transformed_path_str = transformed_path_str[transformed_path_str.find('L'):]
+                
         else:  # Horizontal segment
             orientation = 1 if dx > 0 else -1
             if orientation > 0:
@@ -88,26 +112,46 @@ class JigsawPiece:
                     f"C {cx + s * two * orientation} {cy}, {cx + s * six * orientation} {cy}, {cx + s * six * orientation} {cy}",
                     f"L {cx + s * orientation} {cy}"
                 ]
+                transformed_path_str = " ".join(tab_path)
             else:
-                orientation = orientation * -1
-                cx = cx - s * orientation
                 tab_path = [
-                    f"M {cx} {cy}",
                     f"L {cx + s * one * orientation} {cy}",
                     f"C {cx + s * two * orientation} {cy}, {cx + s * seven * orientation} {cy - s * three*inny_outy}, {cx + s * seven * orientation} {cy - s * three*inny_outy}",
                     f"C {cx + s * four * orientation} {cy - s * four*inny_outy}, {cx + s * two * orientation} {cy - s * four*inny_outy}, {cx + s * two * orientation} {cy - s * four*inny_outy}",
                     f"C {cx + s * five * orientation} {cy - s * four*inny_outy}, {cx + s * eight * orientation} {cy - s * three*inny_outy}, {cx + s * eight * orientation} {cy - s * three*inny_outy}",
                     f"C {cx + s * two * orientation} {cy}, {cx + s * six * orientation} {cy}, {cx + s * six * orientation} {cy}",
                     f"L {cx + s * orientation} {cy}"
-                    f"M {cx} {cy}",
                 ]
-        return " ".join(tab_path)
 
-    def create_path(self, x_offset=0, y_offset=0):
+                # Convert the tab_path to a path string
+                tab_path_str = " ".join(tab_path)
+
+                # Parse the path into a Path object
+                path = parse_path(tab_path_str)
+
+                mid_x = (cx + cx + s * orientation) / 2
+                # Step 2: Translate the path to move its midpoint to the origin
+                translated_path_1 = path.translated(-mid_x + 0j)
+
+                # Step 3: Apply the scaling to flip the path over the x-axis (now at the midpoint)
+                scaled_path = translated_path_1.scaled(-1, 1)
+
+                # Step 4: Translate the path back to its original position
+                translated_path_2 = scaled_path.translated(mid_x + 0j)
+
+                # Convert the final transformed path to a string
+                transformed_path_str = translated_path_2.d()
+                #remove everything until the first L of the string
+                transformed_path_str = transformed_path_str[transformed_path_str.find('L'):]
+
+        return transformed_path_str
+
+    def create_path(self):
+        # Generate SVG path for the jigsaw piece
         size = self.size
         path_d = []
         
-        x, y = x_offset, y_offset
+        x, y = 0, 0
         path_d.append(f"M {x} {y}")
 
         directions = [
@@ -127,6 +171,7 @@ class JigsawPiece:
                 x, y = x + dx, y + dy
 
         path_d.append("Z")
+        
         return " ".join(path_d)
 
 
@@ -144,21 +189,21 @@ class JigsawPuzzle:
             target_row, target_col, rotation = mapping.get((row, col, 0))
         else:
             target_row, target_col, rotation = row, col, 0
-            #print(f"Mapping ({row}, {col}) to ({target_row}, {target_col}) with rotation {rotation*90} degrees")  # Debugging statement
+            print(f"Mapping ({row}, {col}) to ({target_row}, {target_col}) with rotation {rotation*90} degrees")  # Debugging statement
 
         connections = self.matrix[row][col]
         piece = JigsawPiece(connections, size=self.piece_size, tab_size=self.tab_size)
         
     
         # Generate the SVG path for the jigsaw piece
-        path_d = piece.create_path(x_offset=0,y_offset=0)
+        path_d = piece.create_path()
         
 
         # Define a clipPath for the piece
         clip_path_id = f"clip_{row}_{col}"
         clip_path = self.drawing.defs.add(self.drawing.clipPath(id=clip_path_id))
-        piece_path = self.drawing.path(d=path_d, stroke="none")
-
+        piece_path = self.drawing.path(d=path_d)
+        
         # add the path to the clipPath
         clip_path.add(piece_path)
         
@@ -175,7 +220,7 @@ class JigsawPuzzle:
         # Apply mapping to move the clipped image to its target location
         x_offset_target = target_col * self.piece_size
         y_offset_target = target_row * self.piece_size
-        #print(f"offset_target ({y_offset_target}, {x_offset_target}) with rotation {rotation*90} degrees")  # Debugging statement
+        print(f"offset_target ({y_offset_target}, {x_offset_target}) with rotation {rotation*90} degrees")  # Debugging statement
 
         # Move and rotate the clipped image
         clipped_image["transform"] = f"translate({x_offset_target}, {y_offset_target}) rotate({rotation*90}, {self.piece_size/2}, {self.piece_size/2})"
@@ -221,5 +266,5 @@ puzzle = JigsawPuzzle(puzzle_matrix)
 
 # Define mapping dictionary, e.g., (0, 0, 0) -> (1, 2, 90) maps (0,0) to (1,2) with a 90° rotation
 mapping = np.load(f"Solutions/Mapping_{size}_{conn_types}_{sample_number}.npy", allow_pickle=True).item()  # Define actual mappings as needed
-#print(mapping)
-puzzle.draw(f"jigsaw_puzzle_mapped_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV map.png", mapping=mapping,outline=False)
+print(mapping)
+puzzle.draw(f"jigsaw_puzzle_mapped_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV map.png", mapping=mapping,outline=True)

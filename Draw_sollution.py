@@ -58,7 +58,9 @@ class JigsawPiece:
                     f"L {cx} {cy + s * orientation}"
                 ]
             else:
+                o = orientation
                 orientation = orientation * -1
+                old_cy = cy
                 cy = cy - s * orientation
 
                 tab_path = [
@@ -88,7 +90,9 @@ class JigsawPiece:
                     f"L {cx + s * orientation} {cy}"
                 ]
             else:
+                o = orientation
                 orientation = orientation * -1
+                old_cx = cx
                 cx = cx - s * orientation
                 tab_path = [
                     f"M {cx} {cy}",
@@ -100,7 +104,6 @@ class JigsawPiece:
                     f"L {cx + s * orientation} {cy}"
                     f"M {cx} {cy}",
                 ]
-
 
         return " ".join(tab_path)
 
