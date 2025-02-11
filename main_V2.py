@@ -16,13 +16,13 @@ if __name__ == "__main__":
     start_time = time.time()
     process = psutil.Process()
     start_memory = process.memory_info().rss
-    for n in range(10,11):
+    for n in range(21,25):
         q = 2*n*2.71**(-1/2)
         m = int((2 + q)/2) + 1
-        balance =  int((2*n**2-2*n)/3.5)
-        row_constraint = int(n)
-        
-        for i in range(4,6):
+        balance =  int((2*n**2-2*n)/2)
+        row_constraint = int(n-n/2)
+        m = 10
+        for i in range(0, 1):
             for j in range(50):
                 main(n, initialized_connections = i, m=m, balance=balance,row_constraint = row_constraint, verbose=True)   
             # Print performance metrics

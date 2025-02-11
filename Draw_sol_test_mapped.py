@@ -7,7 +7,6 @@ from io import BytesIO
 import random
 from svgpathtools import parse_path, Path
 
-
 class JigsawPiece:
     def __init__(self, connections, size=26, tab_size=20):
         # Initialize a jigsaw piece with connections, size, and tab size
@@ -240,7 +239,7 @@ class JigsawPuzzle:
             target_row, target_col, rotation = mapping.get((row, col, 0))
         else:
             target_row, target_col, rotation = row, col, 0
-            print(f"Mapping ({row}, {col}) to ({target_row}, {target_col}) with rotation {rotation*90} degrees")  # Debugging statement
+            #print(f"Mapping ({row}, {col}) to ({target_row}, {target_col}) with rotation {rotation*90} degrees")  # Debugging statement
 
         connections = self.matrix[row][col]
         piece = JigsawPiece(connections, size=self.piece_size, tab_size=self.tab_size)
@@ -271,7 +270,7 @@ class JigsawPuzzle:
         # Apply mapping to move the clipped image to its target location
         x_offset_target = target_col * self.piece_size
         y_offset_target = target_row * self.piece_size
-        print(f"offset_target ({y_offset_target}, {x_offset_target}) with rotation {rotation*90} degrees")  # Debugging statement
+        #print(f"offset_target ({y_offset_target}, {x_offset_target}) with rotation {rotation*90} degrees")  # Debugging statement
 
         # Move and rotate the clipped image
         clipped_image["transform"] = f"translate({x_offset_target}, {y_offset_target}) rotate({rotation*90}, {self.piece_size/2}, {self.piece_size/2})"
@@ -307,9 +306,9 @@ class JigsawPuzzle:
 
 
 # Example usage
-sample_number = 20
-size = 10
-conn_types = 17
+sample_number = 14
+size = 15
+conn_types = 23
 puzzle_matrix = np.load(f"Solutions/Solution_{size}_{conn_types}_0_{sample_number}.npy")
 puzzle_matrix = puzzle_matrix[:,:,:4].astype(int)
 
@@ -317,5 +316,5 @@ puzzle = JigsawPuzzle(puzzle_matrix)
 
 # Define mapping dictionary, e.g., (0, 0, 0) -> (1, 2, 90) maps (0,0) to (1,2) with a 90° rotation
 mapping = np.load(f"Solutions/Mapping_{size}_{conn_types}_{sample_number}.npy", allow_pickle=True).item()  # Define actual mappings as needed
-print(mapping)
-puzzle.draw(f"jigsaw_puzzle_mapped_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV map.png", mapping=mapping,outline=True)
+#print(mapping)
+puzzle.draw(f"jigsaw_puzzle_mapped_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV Map.png", mapping=mapping,outline=False)
