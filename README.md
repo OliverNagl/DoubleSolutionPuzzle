@@ -1,7 +1,7 @@
 ## Douple solution Jigsaw Puzzles
 Many types of Jigsaw puzzles have multiple solutions trivially, where one could place any piece at any place, just
 without actually making a picture. Then there is the kind of jigsaw puzzle where the only solution that is possible is the 
-arrangment showing the correct picture. With the recent success of diffusion based image generation Ryan Burgert (& etal.) 
+arrangment showing the correct picture. With the recent success of diffusion based image generation Ryan Burgert (etal.) 
 where able to produce illusions in which a jigsaw puzzle, that can be solved physically in exactly 2 ways, also has two 
 different non trivial image solutions. (https://diffusionillusions.com/) Their website hosts some examples using the double solution
 created by Matt Parker for this purpose (https://www.youtube.com/watch?v=b5nElEbbnfU).
@@ -20,8 +20,8 @@ Here you can see one of the mappings that where created using this code:
 
 
 And here you see it after applying the diffusion illusion algorithm on it:
-<img src="Puzzle_Soluzions_after_diffusion/VanGogh61.png" alt="Puzzle Solution 1" width="400"/>
-<img src="Puzzle_Soluzions_after_diffusion/VanGogh62.png" alt="Puzzle Solution 2" width="400"/>
+<img src="Puzzle_Solutions_after_diffusion/VanGogh61.png" alt="Puzzle Solution 1" width="400"/>
+<img src="Puzzle_Solutions_after_diffusion/VanGogh62.png" alt="Puzzle Solution 2" width="400"/>
 
 
 As one can see the Diffusion still has a hard time mapping two pictures onto the two solutions. (as can be expected from
@@ -53,3 +53,8 @@ arXiv preprint, 2016.
 5) negate the second solution and make sure that there is no 3rd solution. 
 6) Plot the Mapped (second) solution onto a UV-identity map to be able to run the diffusion illusion code.
 7) enjoy.
+
+## TODO:
+Explain the constraints/code better.
+Implement the Shotgun edge assembly as initial.
+Comment code
