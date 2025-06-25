@@ -20,8 +20,8 @@ Here you can see one of the mappings that where created using this code:
 
 
 And here you see it after applying the diffusion illusion algorithm on it:
-<img src="Puzzle_Soluzions_after_diffusion/VanGoth61.png" alt="Puzzle Solution 1" width="400"/>
-<img src="Puzzle_Soluzions_after_diffusion/VanGoth62.png" alt="Puzzle Solution 2" width="400"/>
+<img src="Puzzle_Soluzions_after_diffusion/VanGogh61.png" alt="Puzzle Solution 1" width="400"/>
+<img src="Puzzle_Soluzions_after_diffusion/VanGogh62.png" alt="Puzzle Solution 2" width="400"/>
 
 
 As one can see the Diffusion still has a hard time mapping two pictures onto the two solutions. (as can be expected from
