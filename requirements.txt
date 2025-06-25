@@ -1,5 +1,7 @@
 numpy
 svgwrite
 svgpathtools
+python-sat
 pysat
-psutils
+pycryptosat
+psutil
