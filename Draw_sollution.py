@@ -253,9 +253,9 @@ class JigsawPuzzle:
 # Example usage
 # Define a matrix of connection types for a 3x3 puzzle
 # Each entry is a list of four integers representing connection types [right, down, left, up]
-sample_number = 20
-size = 10
-conn_types = 17
+sample_number = 14
+size = 15
+conn_types = 23
 puzzle = np.load(f"Solutions/Solution_{size}_{conn_types}_0_{sample_number}.npy")
 
 # Drop the last two entries of the (n,n,6) matrix making it (n,n,4) and convert all entries to integers$$

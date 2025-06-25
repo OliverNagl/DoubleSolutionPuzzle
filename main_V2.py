@@ -16,7 +16,7 @@ if __name__ == "__main__":
     start_time = time.time()
     process = psutil.Process()
     start_memory = process.memory_info().rss
-    for n in range(21,25):
+    for n in range(18,25):
         q = 2*n*2.71**(-1/2)
         m = int((2 + q)/2) + 1
         balance =  int((2*n**2-2*n)/2)
