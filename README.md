@@ -42,11 +42,11 @@ Interestingly there is a paper on what the ideal number of puzzle edge types the
 
 [1] Anders Martinsson. *A linear threshold for uniqueness of solutions to random jigsaw puzzles*.  
 Combinatorics, Probability and Computing, 28(2), 2019.  
-[arXiv:1701.05240](https://arxiv.org/abs/1701.05240) | [PDF](https://arxiv.org/pdf/1701.05240)
+[arXiv:1701.04813](https://arxiv.org/abs/1701.04813) 
 
 [2] Anders Martinsson. *Shotgun edge assembly of random jigsaw puzzles*.  
 arXiv preprint, 2016.  
-[arXiv:1605.07232](https://arxiv.org/abs/1605.07232) | [PDF](https://arxiv.org/pdf/1605.07232)
+[arXiv:1605.03086](https://arxiv.org/abs/1605.03086)
 
 
 4) Having set enough heuristical constraints the solver will only find "nice" scrambled second solutions.
