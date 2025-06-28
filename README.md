@@ -15,7 +15,7 @@ non trivial double solution jigsaw up to ca. 15x15. (on a Laptop running overnig
 ## Finished puzzles
 Here you can see one of the mappings that where created using this code:
 <img src="jigsaw_puzzle_mapped_14.svg" alt="Puzzle Solution 2" width="400"/>
-<img src="jigsaw_puzzle.svg" alt="Puzzle Solution 1" width="400"/>
+<img src="jigsaw_puzzle_14.svg" alt="Puzzle Solution 1" width="400"/>
 
 
 

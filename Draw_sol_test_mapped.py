@@ -317,4 +317,4 @@ puzzle = JigsawPuzzle(puzzle_matrix)
 # Define mapping dictionary, e.g., (0, 0, 0) -> (1, 2, 90) maps (0,0) to (1,2) with a 90° rotation
 mapping = np.load(f"Solutions/Mapping_{size}_{conn_types}_{sample_number}.npy", allow_pickle=True).item()  # Define actual mappings as needed
 #print(mapping)
-puzzle.draw(f"jigsaw_puzzle_mapped_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV Map.png", mapping=mapping,outline=False)
+puzzle.draw(f"jigsaw_puzzle_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV Map.png", mapping=mapping,outline=False)
