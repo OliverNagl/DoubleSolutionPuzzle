@@ -13,7 +13,7 @@ grids of jigs. The code is super crap and full of bugs. But it works, I was able
 non trivial double solution jigsaw up to ca. 15x15. (on a Laptop running overnight).
 
 ## Finished puzzles
-Here you can see one of the mappings that where created using this code:
+Here you can see one of the mappings that where created using this code, these are the only two solutions possible for these connections:
 <img src="jigsaw_puzzle_mapped_14.svg" alt="Puzzle Solution 2" width="400"/>
 <img src="jigsaw_puzzle_14.svg" alt="Puzzle Solution 1" width="400"/>
 
