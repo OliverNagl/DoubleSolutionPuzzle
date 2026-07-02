@@ -305,16 +305,17 @@ class JigsawPuzzle:
         print(f"Saved jigsaw puzzle as {filename}")
 
 
-# Example usage
-sample_number = 14
-size = 15
-conn_types = 23
-puzzle_matrix = np.load(f"Solutions/Solution_{size}_{conn_types}_0_{sample_number}.npy")
-puzzle_matrix = puzzle_matrix[:,:,:4].astype(int)
+if __name__ == "__main__":
+    # Example usage
+    sample_number = 14
+    size = 15
+    conn_types = 23
+    puzzle_matrix = np.load(f"Solutions/Solution_{size}_{conn_types}_0_{sample_number}.npy")
+    puzzle_matrix = puzzle_matrix[:,:,:4].astype(int)
 
-puzzle = JigsawPuzzle(puzzle_matrix)
+    puzzle = JigsawPuzzle(puzzle_matrix)
 
-# Define mapping dictionary, e.g., (0, 0, 0) -> (1, 2, 90) maps (0,0) to (1,2) with a 90° rotation
-mapping = np.load(f"Solutions/Mapping_{size}_{conn_types}_{sample_number}.npy", allow_pickle=True).item()  # Define actual mappings as needed
-#print(mapping)
-puzzle.draw(f"jigsaw_puzzle_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV Map.png", mapping=mapping,outline=False)
+    # Define mapping dictionary, e.g., (0, 0, 0) -> (1, 2, 90) maps (0,0) to (1,2) with a 90° rotation
+    mapping = np.load(f"Solutions/Mapping_{size}_{conn_types}_{sample_number}.npy", allow_pickle=True).item()  # Define actual mappings as needed
+    #print(mapping)
+    puzzle.draw(f"jigsaw_puzzle_{sample_number}.svg", background="Puzzle_Solutions_after_diffusion/UV Map.png", mapping=mapping,outline=False)
